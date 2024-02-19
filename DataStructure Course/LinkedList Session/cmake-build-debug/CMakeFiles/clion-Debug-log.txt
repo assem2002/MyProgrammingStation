@@ -1,0 +1,13 @@
+"C:\Program Files\JetBrains\CLion 2023.2.2\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=C:/Program Files/JetBrains/CLion 2023.2.2/bin/ninja/win/x64/ninja.exe" -G Ninja -S "F:\My Data\my_programming_station\DataStructure Course\LinkedList Session" -B "F:\My Data\my_programming_station\DataStructure Course\LinkedList Session\cmake-build-debug"
+-- Configuring done (0.3s)
+CMake Error at CMakeLists.txt:6 (add_executable):
+  Cannot find source file:
+
+    Linkes List.cpp
+
+
+CMake Error at CMakeLists.txt:6 (add_executable):
+  No SOURCES given to target: LinkedList_Session
+
+
+CMake Generate step failed.  Build files cannot be regenerated correctly.
