@@ -1,0 +1,46 @@
+2.1.3 - What is meant by data?
+
+'''''
+
+Data is not just a punch of constructors and selectors that shapes a capusle which holds the data,
+It's more of a contract- a set of conditions that these constructors and selectors must fulfill so that compound-data object you build validates these conditions.
+So, you can think of any (literally any) kind of data you want to form as a set of procedures.
+
+even pairs which is thought of as a primitve data type in scheme-Lisp,could be descirbed in a set of three procedures (cons,car,cdr)-that maniuplate the lambda expression, Do you see how we made a data object of thin air (normal procedures)?
+
+even at some point you can get rid of the integers representation and represent the data object of intergers in term of procedures encapsulation (church numerals-lambda represenation).
+
+--------------------------------------
+2.2 hierarchical Data
+
+'''''''
+
+The book emphasize on the conecpt of clousre properity (the properity of combining data together leading to a data object that itself could be combined with other data object using the same constructors that built this object in the first place).
+Here is a quote from the author about pairs-data structure "once you can have a pair you can have as many things as you want",
+so we can have lists and trees which are just bunch of pairs connected in a chain.
+ -------------------------------------------------------------------
+ 
+ 2.2.2 - how the abstraction builds complexity? (p.153 code snippet)
+ '''''
+ 
+ by now you had build a map function that itself build a new list with somefunction applied to its elements,
+ by using such a simple procedure you can build a huge complexity such as traversing through a tree (you'll see how hard it is when you use just pairs to build a whole tree).
+ This shows us how can layers built upon each other providing us with abstracted tools, can give us the ability to make even more complex task such as travesing through a tree.
+ 
+ 
+ -----------------------------------------------------------------
+ how sequence operations is valuble?
+ ''''
+ you can define some complext function like sum-even-fib of some fib(n), you can write it easily own your own, but with a data abstraction like sequences, we're able to build an abstraction layer upon it that deals with sequences and do some important opeartions,so we can later build a more complex program such as, sum-even-fib with using these operations which now are just an abstracion layer.
+ -There is an exercise on the queens problem that utilise the sequence operartion we've made, though this problem in quite compelx to write it's solution in a language like lisp but with buliding abstracted blocks which do some easy tasks you can see how it can build a complex thing and solve such a problem.(fig 2.8)
+ 
+ -----------------------------------------------------------------
+ robust design by levels of language. (see layers figure in notebook)
+ ''''
+ we can build a picture language by using some vectors and segmets data object and their operations.
+ when you look at how the author built this language,you'll see that he dealt with something like segments as a language providing him with some tools and he just use these tools as primitves.
+ then he build the picture object (it's defined as a prodecure on some data which gives us power to take that picture to a higher level and operate on it as primitve),he pushes this object to the next level to make even more complex work.
+ what obseverable here is that you built layer on top of each other so later if you want to change a small piece you can change it with nearly to change to the other parts which makes our program robust.
+ 
+ 
+ 
