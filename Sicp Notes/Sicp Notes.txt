@@ -41,6 +41,20 @@ so we can have lists and trees which are just bunch of pairs connected in a chai
  when you look at how the author built this language,you'll see that he dealt with something like segments as a language providing him with some tools and he just use these tools as primitves.
  then he build the picture object (it's defined as a prodecure on some data which gives us power to take that picture to a higher level and operate on it as primitve),he pushes this object to the next level to make even more complex work.
  what obseverable here is that you built layer on top of each other so later if you want to change a small piece you can change it with nearly to change to the other parts which makes our program robust.
+ ---------------------------------------------------------------------
+ tagged Data (fig 2.21)
+ '''
+ It's a way of building an abstraction barrier for your own program (interface) so we can have muliple representation of the data,and we just leave the choice of choosing which implementatino to use 
+ to the one who is gonna use my own program.
+ It's idea is based on taking the choice of the user and build a data object that is considered unique so i can take that information and pass it to the appropriate implementation, though you can choose multiple represenation of the data abstraction you're going to use but you still use the same layer of abstraction .
+ how it works? : you just take object tag it -> pass the object to a procedure that decide which implementation is gonna rule the program now and whenever the implementation build a data object of its own it just tag it so we can now to whom this piece of data belong.
  
+ This applies the principle of "the least commitment" as you get all the different implementation of the code and decide later which to choose, in our case we didn't even botherd ourselves with the appropriate representation- We made the user choose.
+ 
+ -------------------------------------------------------------------
+ 
+ 
+ 
+  
  
  
