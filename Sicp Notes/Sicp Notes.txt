@@ -52,6 +52,20 @@ so we can have lists and trees which are just bunch of pairs connected in a chai
  This applies the principle of "the least commitment" as you get all the different implementation of the code and decide later which to choose, in our case we didn't even botherd ourselves with the appropriate representation- We made the user choose.
  
  -------------------------------------------------------------------
+ data directed programming (fig 2.22)
+ ''''
+ the tagged Data approach was good but it has two drawbacks which are you can have collisions in with the names of the procedures ,and whenever you add a new representation of your data you need to handle a new caluse in the whole interface that your program provide; so consider a program with 100 interface procedures and 100 different implementations, It will be a mess.
+ so we use the data directed programming, this technique assumes an existence of a table that hold all the interface procedures in on axis and the other axis handles the argument permutation that get based to the procedure so when you call for example (pow int int) and (pow double int) the first will look up in the table for the pow row and the column with (int int) type and return you the desired procedure you want; this will kill the two problem we just mentioned, all what you really want is just to make your code as a package and you install it into the system table.
+ if you think about it, it's extremely similar to the concept of polymorphism in OOP when you use multiple representations through single interface, even when the polymorphism happens it get applied using a table called virtual table (notice: Polymorphism is an implementation of the data directed programming technique).
+ 
+ -------------------------------------------------------------------
+ message passing (illustration and explanation are in my notebook)
+ 
+ 
+ 
+ 
+ 
+ --------------------------------------------------------------
  
  
  

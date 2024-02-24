@@ -1527,6 +1527,88 @@ ex 2.74
       (or (get-record (car allFiles) employee-name) (find-employee (cdr allFiles) employee-name))))
 
 ;when we add new personnel divison into the system all what it wants to just do a put of the procedures it uses into the table of (operations and division-Name)
+-----------------------------------------------------------------------------------
+ex 2.75
 
 
- 	
+(define (make-from-mag-ang x y )
+  (define (dipatch op)
+    (cond ((eq? op 'real-part) (* x (cos y) ))
+          ((eq? op 'imag-part) (* x (sin y) ))
+          ((eq? op 'mag) x)
+          ((eq? op ''ang) y)))
+  dispatch)
+
+----------------------------------------------------------------------------------
+ex 2.76
+
+;For a system that has lots of new operations added (selectors)
+; Data-Directed Programming: would require all the different implementations to re install their new packages or make a custom install prcodeure for their new operations
+; Explicit dispatch : will result in writing a whole clause procdure to dispatch the data to the appropritate implementation.
+; Message Passing : will require nothing (just every one implements his own operation and add to the constructor ) , but this will lead to inconsistency in the system as the old data object wont have
+;the new operations and passing the new message would lead to an error.
+
+;For a system that has lots of new types get added to the system 
+; Data-Directed programming : would require a single installation for the new package (NO names collision)
+; Explicit dispatch : will force you to go through the different dispatch procedure and add a new single clause. (YES names collision)
+; message passing : would require just a new implementation (NO names collision)
+
+
+--------------------------------------------------------------------------------
+ex 2.77
+;data = '(complex rectangular 3 4)
+
+;before adding the new entries into the table the following happens 
+;  (apply-generic 'magnitude data ) --> invokes -->  (get 'magnitude 'complex ) --> which isn't in the table so ERROR invoked.
+
+;After adding the new entries into the table the following happens
+;  (apply-generic 'magnitude data ) --> invokes -->  (get 'magnitude 'complex ) --> return magnitude (the gerneric one)
+; then... apply-generic completes its job.....
+; (apply magnitude (rectagular 3 4)) --> which invokes -> (apply-generic 'magnitude (rectangular 3 4)) --> invokes --> (get 'magnitude 'rectangular) --> returns magnitude-rectangular
+; then apply-generic (internal-one) completes its job.
+; (apply magnitude-rectangular (3 4)) -> returns 3
+
+; so apply-generic got invoked 2 times.
+
+-----------------------------------------------------------------------------------
+ex 2.78
+
+(define (attach-tag type-tag contents)
+(cons type-tag contents))
+(define (type-tag datum)
+(cond( ((pair? datum) (car datum))
+       ((number? datum) 'scheme-number)
+   	   (else(error "Bad tagged datum: TYPE-TAG" datum)))))
+
+(define (contents datum)
+(cond( ((pair? datum) (cdr datum))
+       ((number? datum) datum)
+   	   (else(error "Bad tagged datum: CONTENTS" datum)))))
+
+
+(define (install-scheme-number-package)
+(put 'add '(scheme-number scheme-number) + )
+(put 'sub '(scheme-number scheme-number) - )
+(put 'mul '(scheme-number scheme-number) * )
+(put 'div '(scheme-number scheme-number) / ))
+
+; you can use the same "install-scheme-number-package" provided in the book with lambda functions
+;just change the attach-tag to return a the same the content without combining the type scheme-number to the data.
+---------------------------------------------------------------------------------------------
+ex 2.79
+
+(define (install-equ-for-all-implementations)
+  (define (equ?-ordinary x y) (= x y))
+  (define (equ?-rational x y) (eq? x y))
+  (define (equ?-complex x y) (and (= (real-part x) (real-part y)) 
+                                  (= (imag-part x) (imag-part y))))
+  (put 'equ? '(scheme-number scheme-number) equ?-ordinary)
+  (put 'equ? '(rational rational) equ?-rational)
+  (put 'equ? '(complex complex) equ?-complex))
+
+(define (equ? x y) (apply-genreic 'equ? x y ) )
+
+
+
+
+
