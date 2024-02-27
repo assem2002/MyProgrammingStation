@@ -1608,7 +1608,253 @@ ex 2.79
 
 (define (equ? x y) (apply-genreic 'equ? x y ) )
 
+-----------------------------------------------------------------------------------------------
+ex 2.80
+;utilize the predone preocedures to solve the problem faster
+
+(define (=zero? x) (equ? (sub x x ) (add x x)))
+
+
+-------------------------------------------------------------------------------------------------
+ex 2.81
+;a) I don't know why did he assume that apply-generic would do such a thing
+; but his own implementation would cause an infinite loop of coercion.
+
+;b) It works correctly as I type the type-corecion procedures with my own bare hands,it's my mistake if such a thing happens
+
+;c) we need no modifications
+
+
+-------------------------------------------------------------------------------------------------
+ex 2.82
+
+;I assume that get-coercion sends a false signal if there's no match.
+;Pray with me there won't be no syntax errors here.
+(define (apply-genreic op . args)
+  (define (all-tags-same? tags)
+    (if (null? (cdr tags)) true
+        (if (eq? (car tags) (cadr tags)) (all-tags-same? (cdr tags))
+             								false ))
+  (define (check-all-valid? coercion-list)
+    (if (null? coercion-list) true 
+        (and (car coercion-list) 
+             (check-all-valid? (cdr coercion-list)))))
+  
+  (define (get-coerced to-tag from)
+    ( if (eq? to-tag (get-tag from)) from 
+    		(let ((proc-coercion (get-coercion (get-tag from) to-tag)))
+      				(if proc-coercion (proc-coercion from)
+          								false ))))
+  
+  (define (coerced-then-go tag) 
+    (let ((coerced-list (map (lambda (x) (get-coerced tag x)) args)))
+      (if (check-all-valid coerced-list) (apply apply-generic (append '(op) coerced-list ))
+          								false )))
+  
+  (let ((tags-only (map get-tag args))
+        (content-only (map get-content args)))
+    (let ( (proc (get op tags-only)) ) 
+      (if proc 
+          (apply proc content-only)
+		  (if (not(all-tags-same)) (accumulate and true (map coreced-then-go tags-only)))
+          							false)))))
+;if we assume we have a clock system and it has a procedure (make-time hours minutes) -> it prints this way (HH::MM)
+;internally in just deals with hours and minutes data types to construct the time
+; if you pass to it (make-time minutes hours ) it will fail to find the procedure so a coercion will get invoked
+; if you coerce to single type only it will try (make-time hours hours) and (make-time minutes minutes) which are both return to valid procedure from the table.
+  
+  )
+
+--------------------------------------------------------------------------------------------------
+ex 2.83
+
+(define (install-raise)
+  (define (raise-interger-to-rational i) (make-rational i 1))
+  (define (raise-rational-to-real x) (make-real x)) ; some magic procedure i don't care about
+  (define (raise-real-to-complex x) (make-from-real-imag x 0))
+  (put 'raise '(integer) raise-interger-to-rational)
+  (put 'raise '(rational) raise-rational-to-real)
+  (put 'raise '(real) raise-real-to-complex))
+
+(define (raise data) 
+  ((get 'raise (get-tag data)) (content data)))
+; we could use apply-generic.
+
+
+---------------------------------------------------------------------------------------------------
+ex 2.84
+;I assume that real data type takes to numbers and just divide them and get a decimal number
+(define (install-raise)
+  (define (raise-interger-to-rational i) (make-rational i 1))
+  (define (raise-rational-to-real x) (make-real (numer x) (denom x) )) ; some magic procedure i don't care about
+  (define (raise-real-to-complex x) (make-from-real-imag x 0))
+  (put 'raise '(integer) raise-interger-to-rational)
+  (put 'raise '(rational) raise-rational-to-real)
+  (put 'raise '(real) raise-real-to-complex))
+
+(define (raise data) 
+  ((get 'raise (get-tag data)) (content data)))
+; we could use apply-generic.
+
+(define (apply-generic op . args)
+  (define tower '(integer rational real))
+  (define tower-up cdr )
+  (define tower-base car )
+  
+  (define (tag-match? current-tag tags-only)
+    (accumulate and true
+     	(map (lambda (x) (eq? current-tag x) ) tags-only)))
+  
+  (define (lowest-in-tower-matcher tags-only) 
+    (define (insider current-tower)
+      (cond ((null? current-tower) false)
+          	((tag-match? (tower-base current-tower) tags-only) (tower-base current-tower) )
+            (else (insider (tower-up current-tower)))))
+   (insider tower))
+  
+  (define (raise-this-only tag-to-raise)
+    (map (lambda (x) (if (eq? tag-to-raise (get-tag x)) x
+                         (raise x))) args))
+  
+  (let ((tags-only (map get-tag args))
+        (content-only) (map content args))
+    (let ((proc) (get op tags-only)) 
+      (if proc (apply proc content-only)
+          		(let ((lowest-in-tower (lowest-in-tower-matcher tags-only))) 
+                  (if lowest-in-tower (apply-gerneric op (apply (raise-this-only lowest-in-tower) ) )
+                      					(error "we can't do this procedure, there's no match")))))))
+---------------------------------------------------------------------------------------------------------
+ex 2.85
+
+
+;I assume that real data type takes to numbers and just divide them and get a decimal number
+
+(define (install-raise)
+  (define (raise-interger-to-rational i) (make-rational i 1))
+  (define (raise-rational-to-real x) (make-real (numer x) (denom x) ) ) ; some magic procedure i don't care about
+  (define (raise-real-to-complex x) (make-from-real-imag x 0))
+  (put 'raise '(integer) raise-interger-to-rational)
+  (put 'raise '(rational) raise-rational-to-real)
+  (put 'raise '(real) raise-real-to-complex))
+
+(define (raise data) 
+  ((get 'raise (get-tag data)) (content data)))
+; we could use apply-generic.
+
+;Sorry, I interchanged the implemntation of project with the drop
+
+
+(define (install-drop)
+  (define (complex->real x) (make-real (real-part x) 1) )
+  (define (real->rational x) (make-rational (quotient x 1) 1))
+  (define (rational->integer x) (make-integer (/ (numer x) (denom x)) ))
+  (put 'drop 'complex complex->real) ; type don't need to be a list (i won't use apply-generic)
+  (put 'drop 'real real->rational)
+  (put 'drop 'rational rational->integer))
+
+(define (drop x) (get 'drop x))
+
+(define (project x )
+  (let ((proc(drop (get-tag x)))) 
+    (if (not proc) x
+        (let ((dropped (proc (content x)) )) 
+          (if (equal? (raise dropped) x ) (project dropped)
+              		x)))))
+
+
+(define (apply-generic op . args)
+  (define tower '(integer rational real))
+  (define tower-up cdr )
+  (define tower-base car )
+  
+  (define (tag-match? current-tag tags-only)
+    (accumulate and true
+     	(map (lambda (x) (eq? current-tag x) ) tags-only)))
+  
+  (define (lowest-in-tower-matcher tags-only) 
+    (define (insider current-tower)
+      (cond ((null? current-tower) false)
+          	((tag-match? (tower-base current-tower) tags-only) (tower-base current-tower) )
+            (else (insider (tower-up current-tower)))))
+   (insider tower))
+  
+  (define (raise-this-only tag-to-raise)
+    (map (lambda (x) (if (eq? tag-to-raise (get-tag x)) x
+                         (raise x))) args))
+  
+  (let ((tags-only (map get-tag args))
+        (content-only) (map content args))
+    (let ((proc) (get op tags-only)) 
+      (if proc project((apply proc content-only))
+          		(let ((lowest-in-tower (lowest-in-tower-matcher tags-only))) 
+                  (if lowest-in-tower (apply-gerneric op (apply (raise-this-only lowest-in-tower) ) )
+                      					(error "we can't do this procedure there's no match")) )))))
+
+
+-----------------------------------------------------------------------
+ex 2.86
 
 
 
+;I made a great use out of the idea that our apply-generic now can raise your data type to the top of the tower
+;and then it can down it if possible so i traverse thorugh the whole tower which saves my alot of implementation to write 
+;when i wanted to write a trignometic procedures for the types in my system i just went up to the top and did the math on that type and drop back the result.
 
+
+
+(define (install-trig-for-real)
+  (define (cosine-real x) (make-real(cos x))) ; definition of real numbers isn't known so assume the previous implem.
+  (define (sine-real x)  (make-real( sin x)))
+  (define (atan2-real x y) (atan (/ y x) ))
+  (define (squre-real x) (make-real (square x) 1))
+  (define (square-root x) (make-rational (sqrt x) ))
+  
+  (put 'cosine '(real) cosine-real)
+  (put 'sine '(real) sine-real)
+  (put 'atan2 '(real real) atan2-real)
+  (put 'square-mod '(real) square-real)
+  (put 'sqrt-mod '(real) square-root))
+
+
+(define (cosine x) (apply-genereic 'cosine x))
+(define (sine x) (apply-genereic 'sine x))
+(define (atan2 x y) (apply-genereic 'atan x y))
+
+(define (install-complex-rectagular)
+  (define (make-from-real-imag x y ) (cons x y) )
+  (define (real-part z) car )
+  (define (imag-part z) cdr)
+  (define (angle z) (atan2 (imag-part z) (real-part z) ))
+  (define (magnitude z) (sqrt-mod (add (square-mod (real-part z)) (square-mod (imag-part)) )) )
+  ;start putting everything into the table.
+  )
+
+(define (add-complex z1 z2)
+(make-from-real-imag (add (real-part z1) (real-part z2))
+(add (imag-part z1) (imag-part z2))))
+(define (sub-complex z1 z2)
+(make-from-real-imag (sub (real-part z1) (real-part z2))
+(sub (imag-part z1) (imag-part z2))))
+(define (mul-complex z1 z2)
+(make-from-mag-ang (mul (magnitude z1) (magnitude z2))
+(add (angle z1) (angle z2))))
+(define (div-complex z1 z2)
+(make-from-mag-ang (div (magnitude z1) (magnitude z2))
+(sub (angle z1) (angle z2))))
+
+
+
+;conclusion of the previous exercises:
+
+;we started the system by building for data types (integer,rational,real,complex),and we had selectors and constructors for each one which obeyed the data directed programming rule that forces us
+;to tag our data whenever we construct them.
+;then we wanted a way to coerce any type of them into the other one (was simple as it was (single sub,single sup) hierarchy) and we mangaed to embed this coercion into the apply-generic
+;which gave us great capabilites such as (simplifying ,doing operation on any kind of don't matched data types)
+;then we added the layer of abstraction that provide arithmtic operation on our system of numbers (add,sub,mul,div) which litterly works with any kind of data type
+;then it asked us to do a little stupid thing but it showed us how great our system is built,it asked us to make a complex number out of one of its competetors (real,rational) 
+;then we notice that our system is very generic,we can add to numbers easily or subtract or mul or ...; so all what we need to do is just make the implementation of the complex number generic 
+;and even we wanted to code triagnomeric procedures as generic procedures we used to idea of coercion to simply coerce any type to supertype and implement small amount of the code
+;which in fact opens our eyes to something even more interesting (we can simply implement the complex part for (add,sub,mul,div,cos,sin) and whenever we call something like add integer integer
+;we just go up in the hirerarchy and do the job and drop the hirerarchy again.
+;BASICALLY THE HIERARCHY HERE MADE US APLE OF THROWING AWAY EVERYTHING WE KNEW AND STICK WITH THE FACT THAT WE CAN JUST GO TO THE MOST GENERIC DATA TYPE AND OPERATE ON DROP BACK.
+----------------------------------------------------------------------------------------------------------

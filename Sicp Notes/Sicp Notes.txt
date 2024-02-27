@@ -66,9 +66,15 @@ so we can have lists and trees which are just bunch of pairs connected in a chai
  
  
  --------------------------------------------------------------
+ Hierarchy dataTypes
+ ''''
  
  
+ so far when you have a system of types that are represnted in a hierarchical form (see figure 2.25) we can a build a system that essentially depend on that idea of 
+ leveling your data type up to the most generic datatype in the system so far and apply the on it whether it's (add,sub,mul,div,cos,sin) and when you done your job just simplify the form again,
+ this way of design is hard to do when dealing with a multiple subtype-supertype data representation
  
+
   
  
  
