@@ -1614,7 +1614,7 @@ ex 2.80
 
 (define (=zero? x) (equ? (sub x x ) (add x x)))
 
-
+;when you proceed in the complexity of the system and add polynomial manipulation , this procedure would cause a problem as we didn't supply a sub procedure
 -------------------------------------------------------------------------------------------------
 ex 2.81
 ;a) I don't know why did he assume that apply-generic would do such a thing
@@ -1856,5 +1856,202 @@ ex 2.86
 ;and even we wanted to code triagnomeric procedures as generic procedures we used to idea of coercion to simply coerce any type to supertype and implement small amount of the code
 ;which in fact opens our eyes to something even more interesting (we can simply implement the complex part for (add,sub,mul,div,cos,sin) and whenever we call something like add integer integer
 ;we just go up in the hirerarchy and do the job and drop the hirerarchy again.
-;BASICALLY THE HIERARCHY HERE MADE US APLE OF THROWING AWAY EVERYTHING WE KNEW AND STICK WITH THE FACT THAT WE CAN JUST GO TO THE MOST GENERIC DATA TYPE AND OPERATE ON DROP BACK.
+;BASICALLY THE HIERARCHY HERE MADE US APLE OF THROWING AWAY EVERYTHING WE KNEW AND STICK WITH THE FACT THAT WE CAN JUST GO TO THE MOST GENERIC DATA TYPE AND OPERATE ON  IT AND DROP BACK.
 ----------------------------------------------------------------------------------------------------------
+ex 2.87
+
+(define (new-zero-installation)
+  (define (=zero?-polynomial x) 
+    (empty-termlist? (termlist x)))
+  (put '=zero? 'polynomial =zero?-polynomial))
+;The system witht the provided abstractions doesn't support a polynomial with empty terms,it would be just a problem if someone tried
+;to make (explictly) a term list out of empty term-lists using the adjoin-term procedure the result would be a '() so we got to handle this
+;situtation when we have such a weird user.
+
+-------------------------------------------------------------------------------------------------------------------
+ex 2.88
+
+
+(define (new-installation-to-polynomials)
+    (define (make-negated cur-term-list) 
+    	(if (null? cur-term-list ) the-empty-term-list 
+            (let ((first (first-term cur-term-list)) 
+                  (rest (rest-terms cur-term-list)))
+                  (adjoin-term 
+                   			(make-term (order first) (mul (coeff first) -1 )) 
+                   			(make-negated rest)))))
+  
+  (define (sub-polynomials p1 p2 ) 
+    (cond ((same-variable? (variable p1) (variable p2)) 
+           (make-poly (variable p1)
+                     (add-term (term-list p1)
+                     (make-negated (term-list p2)))))
+          (else (error "polys to the same variable SUB-POLYNOMIALS"))))
+  (put 'sub '(polynomial polynomial) sub-polynomials ))
+--------------------------------------------------------------------------------------------------------------------------
+ex 2.89 2.90
+
+;the new modifications are analogous and werid
+
+
+-------------------------------------------------------------------------------------------------------------------------
+ex 2.91 to the end of chapter -> not solved yet
+
+--------------------------------------------------------------------------------------------------------------------------
+ex 3.1
+(define (make-accumulator inital)
+  (define (insider amount) (begin (set! inital (+ inital amount)) inital)) insider)
+(define m1 (make-accumulator 5))
+;(m1 10)
+;(m1 4)
+--------------------------------------------------------------------------------------------------------------------------
+ex 3.2
+(define (make-monitered func)
+  (define theFunction func)
+  (define localStateCnt 0)
+  (define (reset) (set! localStateCnt 0))
+  (define (increment) (set! localStateCnt (+ localStateCnt 1)))
+  (define (dispatch message)
+    (cond ((eq? message 'how-many-calls?) localStateCnt)
+          ((eq? message 'reset-count) (reset))
+          (else  (increment)(theFunction message) )
+          ))dispatch)
+(define a (make-monitered square))
+;(a 4)
+;(a 3)
+;(a 4)
+;(a 'how-many-calls?)
+;(a 'reset-count)
+;(a 'how-many-calls?)
+
+--------------------------------------------------------------------------------------------------------------------------
+ex 3.3 + ex 3.4
+(define (make-account user-password balance)
+	(define wrong-entries 0)
+	(define (reset) (set! wrong-entries 0))
+  	(define (increment) (set! wrong-entries (+ wrong-entries 1)))
+(define (withdraw amount)
+	(if (>= balance amount)
+		(begin (set! balance (- balance amount))
+		balance)
+		"Insufficient funds"))
+(define (deposit amount)
+	(set! balance (+ balance amount))
+	balance)
+(define (dispatch entered-password m)
+  (cond ((eq? entered-password user-password) 
+		(reset)(cond ((eq? m 'withdraw) withdraw)
+		((eq? m 'deposit) deposit)
+		(else (error "Unknown request: MAKE-ACCOUNT"m))))
+      ((>= wrong-entries 2) (error "call-the-cops!"))
+        (else (increment) (error "Wrong Password!!") )))
+	dispatch)
+(define w (make-account 'pass 100))
+;((w 'passs 'deposit) 10)
+;((w 'passs 'deposit) 10)
+;((w 'pass 'deposit) 10)
+;((w 'passs 'deposit) 10)
+;((w 'passs 'deposit) 10)
+;((w 'passs 'deposit) 10)
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------
+ex 3.5
+
+(define (square x) (* x x))
+(define (monte-carlo trials experiment)
+	(define (iter trials-remaining trials-passed)
+		(cond ((= trials-remaining 0)
+				(/ trials-passed trials))
+			  ((experiment)
+				(iter (- trials-remaining 1)
+				(+ trials-passed 1)))
+			  (else (iter (- trials-remaining 1)
+							trials-passed))))
+	(iter trials 0))
+
+(define (random-in-range low high)
+	(let ((range (- high low)))
+	(+ low (random range))))
+
+(define (integral1-predicate x y) 
+  (<= (+ (square (- x 5)) (square (- y 5))) 1))
+
+(define (estimate-integral p x1 x2 y1 y2 trials)
+  (define (exper) (p 
+                 (random-in-range x1 x2) (random-in-range y1 y2)))
+ 	(define area ( * (- x2 x1) (- y2 y1) ) )
+  (* area (monte-carlo trials exper )))
+(estimate-integral integral1-predicate 4 6 4 6 1000)
+
+----------------------------------------------------------------------------------------------------------------------------
+ex 3.6
+
+(define (random) 
+  (define x inital-x)
+  (define (reset newX) (set! x newX ))
+  (define (generate) (begin (set! x (rand-update x)) x))
+  (define (dispatch m)
+    (cond ((eq? m 'generate ) (generate))
+          ((eq? m 'reset) reset)
+          (else (error "wrong Choice!!"))))
+  dispatch)
+
+(define rand (random))
+((rand 'reset) 20)
+(rand 'generate)
+(rand 'generate)
+((rand 'reset) 20)
+(rand 'generate)
+
+-------------------------------------------------------------------------------------------
+ex 3.7
+
+(define (make-account user-password balance)
+	(define wrong-entries 0)
+	(define (reset) (set! wrong-entries 0))
+  	(define (increment) (set! wrong-entries (+ wrong-entries 1)))
+(define (withdraw amount)
+	(if (>= balance amount)
+		(begin (set! balance (- balance amount))
+		balance)
+		"Insufficient funds"))
+(define (deposit amount)
+	(set! balance (+ balance amount))
+	balance)
+(define (dispatch entered-password m)
+  (cond ((eq? entered-password user-password) 
+		(reset)
+         (cond
+          	((eq? m 'check-password) true)
+        	((eq? m 'withdraw) withdraw)
+			((eq? m 'deposit) deposit)
+			(else (error "Unknown request: MAKE-ACCOUNT"))))
+      ((>= wrong-entries 2) (error "call-the-cops!"))
+        (else (increment) (error "Wrong Password!!") )))
+	dispatch)
+
+(define (make-joint account account-pass currentPassword)
+  (cond ((account account-pass 'check-password)
+         (lambda (password m)
+           (cond ((eq? password currentPassword) (account account-pass m))
+                 (else (error "wrong passowrd")))))
+        (else (error "wrong password to merge with"))))
+
+(define peter-acc (make-account 'pass 100))
+(define paul-acc (make-joint peter-acc 'pass 'ww))
+((paul-acc 'ww 'deposit) 10)
+((peter-acc 'pass 'deposit) 10)
+
+--------------------------------------------------------------------------------------------------
+ex 3.8
+(define f
+  (let ((flag 0))
+    (lambda (x) (if (= x 0) flag 
+                    (let ((oldflag flag))
+                          (begin (set! flag 1) oldflag)) ))))
+;(+ (f 0) (f 1)) -> 0
+;(+ (f 1) (f 0)) -> 1
+

@@ -74,7 +74,48 @@ so we can have lists and trees which are just bunch of pairs connected in a chai
  leveling your data type up to the most generic datatype in the system so far and apply the on it whether it's (add,sub,mul,div,cos,sin) and when you done your job just simplify the form again,
  this way of design is hard to do when dealing with a multiple subtype-supertype data representation
  
+----------------------------------------------------------------
+assignment,computaional objects (see "https://youtube.com/clip/UgkxeBAPKGxvDASE98YPrThcRgUnARPTJqtg?si=X42jAI0P-I7VhdSq")
+''''''''''''''''
+quote from the book:
 
+"From the point of view of one part of a complex process, the other
+parts appear to change with time. they have hidden time-varying local
+state. If we wish to write computer programs whose structure reﬂects
+this decomposition, we make computational objects (such as bank ac-
+counts and random-number generators) whose behavior changes with
+time. We model state with local state variables, and we model the changes
+of state with assignments to those variables."
+
+Till this moment you'll notice we haven't used the though of assigning values to variable and mutate them to express the state of some procedure.
+when we change our prespective of procedures from just being a block of code that does the same exact thing over and over if it take the same input , to the prespective of that it's a block of code
+that if it has a local state variable the return of procedure would differ, now we're taking about what's called a computational object not just I/O procedure.
+we now can view things as procedures still,but not as mathematical procedure (I/O procedure) ,but rather an object that has a history and depending on this history it return values.
+all of that is doable by one using LOCAL STATE variable.
+--------------------------------------------------------------------
+The Cost of introducing the assignment 
+''''''
+
+We used to look at function from the mathematical view as a block of code that you give it input and always will result in the same output.
+that preception of what a procedure is made it easy to use something like substitution model so you can evaluate to output of your procedure.
+but when assignment got brought to the table this model of evalution got really messy because now you the symbols that describe values can change, they no longer only describe some constant value.
+Now we need to find another way to handle such a thing 
+-------------------------------------
+sameness and change
+''''
+our perception about what is the same object in out system and what's not will now be mysterious.
+one procedure would be assigned to different names like bank account, though they both have the same function but still not the same just because it used the notion of local state.
+so now if we want to say that two object aren't the same we have to operate on one if them and see if changes the state of the other on (check if it didn't change),but still we don't have a way to say if some procedure has changed its state or not so we fall in some dillema here.
+
+We used to look at what outstands an object from the other just by the totality of it (like rational numbers,just it's numerator and denomerator describe the uniqueness of the object);
+but now with the assignment we have another look to the object, it has an "IDENTITY" something very unique, so that we can a rational object "a" with value (3/4) is not the same as object "b" which it's value is also (3/4); and the object while its value is (5/4) and changes to (6/7) we can would say its still the same object.
+
+------------------------------------
+pitfalls of imperative programming 
+''''
+though it's easy to understand the program when you write in this style, it could produce so much bugs out of the idea of "what assignment statement should i place first to get what i want?", it makes you just care about what to write first and last while you have more important things to think about.
   
+
+
  
  
