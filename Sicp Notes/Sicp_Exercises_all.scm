@@ -2054,4 +2054,58 @@ ex 3.8
                           (begin (set! flag 1) oldflag)) ))))
 ;(+ (f 0) (f 1)) -> 0
 ;(+ (f 1) (f 0)) -> 1
+-----------------------------------------------------------------------------------------------
+ex 3.9
+
+recursive way:
+
+would build environment for the every call to the factoral procedure
+
+env.1 -> (factorial 6)
+env.2 -> (factorial 5)
+env.3 -> (factorial 4)
+env.4 -> (factorial 3)
+env.5 -> (factorial 2)
+env.6 -> (factorial 1)
+when it reaches to base case ,it will just start to return the results and evaluating the (* n (factorial (- n 1 ))) part till it hit the env1 then it returns you the value (how the return from env2 up to env6 is handled implictly is still a hidden thing for us).
+--------------
+interative way:
+
+env.1 -> (factorial 6)
+env.2 -> (factorial-iter 1 1 6)
+env.3 -> (factorial-iter 1 2 6)
+env.4 -> (factorial-iter 2 3 6)
+env.5 -> (factorial-iter 6 4 6)
+env.6 -> (factorial-iter 24 5 6)
+env.7 -> (factorial-iter 120 6 6)
+env.6 -> (factorial-iter 720 7 6)
+
+If the interperter does its optimization and won't build a stack overhead , this could lead to env1 and env2 gets created and then deleted and created again with new parameters.
+--------------------------------------------------------------------------------------------------------------
+ex 3.10
+
+(make-withdraw) -> is binded to a procedure object (pointer to body with parameter: inital-amount, pointer to the global environment)
+
+whenever we start calling with-draw by passing an argument we create an enivorment
+(make-withdraw 100) -> creates env1-> that has the following bindings (inital-amount:100) and then starts evaluating the body --> the body starts to decompose the let expression into lambda and which results in a
+procedure object and then it call that object with argument passed as 100 which creates and env2 with the following bindings (balance:100) and then it creates a procedure object that points to a body with 
+parameter amount 
+
+(w1 (make-withdraw 100)) --> after evalutating the make-withdraw procedure we have w1 points to a procedure object which is the deepest procedure in the code,
+so when we call it, it builds new environment (env3 for now)  which point to env2 which has the local state balance the env3 starts to mutate,while the env1 that has the inital-amount not getting changed 
+at all(-though env3 can access it-),because the set! procedure just mutates what's binded to variable balance.
+-----------------------------------------------------------------------------------------------------------------------
+ex 3.11
+
+make-account when defined the global environment binds the name of "make-account" to the procedure object which has two pointers one points to the global environment and the other one points to the body.
+
+when called it starts to to bind the parameter balance to the argument passed and in that env. it has three bindings (withdraw,diposit,dispatch) and just the procedure object is passed as a return.
+
+when you start to pass a message to that return (dispatch procedure) it starts to give you the result of whateveer procedure you choose, and whatever the procedure you choose it just mutate the balance whithin the env1.
+
+mainly the make-account when called makes a env. and whenever you do a withdraw or a deposit it just created a new env and handles the body then return the variable and the just created env get deleted or becomes irrelavent to the model of evalution we are using at the moment.
+
+------------------------------------------------------------------------------------
+
+
 

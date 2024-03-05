@@ -114,7 +114,20 @@ but now with the assignment we have another look to the object, it has an "IDENT
 pitfalls of imperative programming 
 ''''
 though it's easy to understand the program when you write in this style, it could produce so much bugs out of the idea of "what assignment statement should i place first to get what i want?", it makes you just care about what to write first and last while you have more important things to think about.
-  
+
+--------------------------------------
+The Enviornment model of evalutation. (see figure 3.2 + 3.3)
+'''
+
+the book starts to introduce a new prespective of how we look to procedure calls, the model states the following:
+
+- every procedure defined using the keyword is essentially a lambda function (the define keyword is just a syntactic sugar)
+- we have a global environment which the main procedure we handle our program in, and whenever we call a procedure we just build an enviorment.
+- each environment has what's called a frame which is just a table of bindings that bind variables with values.
+- we look at procedures as a pair of pointers, one points to body of the procedure , and the other one points to the environment from which it got created 
+- if an environment encapsulated indside another one have the same vaiable as its super environment, it does what's called shadowing to the varibles, and just start acting on its own variables.
+- An environment is only created whenever you call a procedure and if it has parameters, it binds those paramters to the arguments you've passed to it, if shodwing is necessary it does it.
+so when ever you define a procedure or a variable in an environment they get binded in the table, and when you start calling the procedure , what happens is we build another environment pointing to the current one and we start messing around in that environment till we fininsh our job.
 
 
  
