@@ -1,3 +1,0 @@
-F:/My Data/my_programming_station/DataStructure Course/Stack Session/cmake-build-debug/CMakeFiles/Stack_Session.dir
-F:/My Data/my_programming_station/DataStructure Course/Stack Session/cmake-build-debug/CMakeFiles/edit_cache.dir
-F:/My Data/my_programming_station/DataStructure Course/Stack Session/cmake-build-debug/CMakeFiles/rebuild_cache.dir

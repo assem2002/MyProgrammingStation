@@ -1,3 +1,0 @@
-F:/My Data/my_programming_station/DataStructure Course/Doubly Linked List/cmake-build-debug/CMakeFiles/Doubly_Linked_List.dir
-F:/My Data/my_programming_station/DataStructure Course/Doubly Linked List/cmake-build-debug/CMakeFiles/edit_cache.dir
-F:/My Data/my_programming_station/DataStructure Course/Doubly Linked List/cmake-build-debug/CMakeFiles/rebuild_cache.dir
