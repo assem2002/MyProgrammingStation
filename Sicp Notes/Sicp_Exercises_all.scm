@@ -2106,6 +2106,276 @@ when you start to pass a message to that return (dispatch procedure) it starts t
 mainly the make-account when called makes a env. and whenever you do a withdraw or a deposit it just created a new env and handles the body then return the variable and the just created env get deleted or becomes irrelavent to the model of evalution we are using at the moment.
 
 ------------------------------------------------------------------------------------
+ex 3.12
 
+first response : return (b)
+
+second response : return (b c d)
+
+-----------------------------------------------------------------------------
+ex 3.13
+
+it will build a cycle.
+the last-pair function has it's base case to terminate the recursion -> finiding a nil which can't be found in this data object.
+inifinte recursive call -> call stack overflow.
+-------------------
+A Small Note:
+
+data objects when binded they bind by pointers so when you pass them,you can mutate and the change will affect all bindings
+(define a (list 1 2))
+(define b a)
+(set-car! b 1000)
+a -> (1000 2)
+b -> (1000 2)
+
+While...
+
+(define a 3)
+(define b a)
+(set! b 1000)
+a -> 3
+b -> 1000
+----------------------------------------------------------------------------
+ex 3.14
+
+the code does a list reverse.
+
+by taking a pair by pair from the first to the end of the original list and add them disattacheing the first pair from the list sequence and make it point to the last reversed pair.
+
+v as variable points to  the first pair (cons a (POINTER)). when the code runs, the cdr goes and point to '().
+
+so now v will equal ->(a)
+w ->(d c b a)
+
+-------------------------------------------------------------------------
+ex 3.15
+'b symbol will be shared amongest	 all the objects.
+'wow also will be shared amongest all the objects.
+----------------------------------------------------------------------
+ex 3.16
+;(count-pairs (list 1 2 3) ) -> return 3 
+;;;;;
+;(define z (cons nil nil))
+;(define y (cons z z))
+;(define x (cons y y))
+;(count-pairs x ) -> return 7
+;;;;;
+
+(define x (cons nil nil))
+(define y (cons x x))
+(set-car! x y)
+(count-pairs x) -> no return (infinite recursion )
+----------------------------------------------------------
+ex 3.17
+
+
+
+(define exist '() )
+(define (count-pairs x)
+      (cond ((or (not (pair? x)) (memq x exist) ) 0)
+          (else (set! exist (cons x exist)) (+ (count-pairs (cdr x))
+             (count-pairs (car x)) 1))))
+-------------------------------------------
+ex 3.18
+
+(define (find item-pointer l)
+  (cond ((null? l) false)
+        ((eq? (car l) item-pointer) true)
+        (else (find item-pointer (cdr l)))))
+
+
+
+
+(define (has-cycle? l)
+  (define visited '())
+  (define (internal x) 
+    (cond ((null? x) false )
+          ((find x visited) true)
+          (else (begin (set! visited (cons x visited)) (internal (cdr x)) ))))
+  (internal l))
+---------------------------------------------
+ex 3.19
+
+;flipped the data structure (it's ruined,but the idea works in constant space :)  )
+(define (has-cycle? l)
+  (define (internal prev cur)
+    (cond 	((null? cur)false)
+     		((eq? cur l) true)
+           (else (let ((tempNext (cdr cur))) 
+                   (begin (set-cdr! cur prev) (internal cur tempNext))))))
+
+  (internal l (cdr l))
+  )
+
+-----------------------------------------------
+ex 3.20
+
+z's both data objects (first and second) are pointing to the object procedure (dispatch procedure) which is encapsulated in enviornment made by calling (cons 1 2 ).
+ 
+------------------------------------------------
+ex 3.21
+
+Lisp interpeter handles the printing issue in a recursive way. When ever it finds a pointer to some data object it goes into it, If it's a pair data object that means we have pair of data object that needs to
+be printed so it goes into the pointer of the first and print out the data (if it's primitve it prints right away, if a data object it recursive on the logic of priniting poitners)...then it goes to the second pointer and print it out .
+
+The issue that queue is a pair of pointers the first points to the begining of the queue which prints the queue list as intended,but then it goes to the second data object of the queue pair and start print out what ever the data it finds in there (primitve or pointer). the second data object in the queue pair is pointing to the last element in the last,thus the data is printed that way.
+
+
+
+(define (print) (front-ptr))
+----------------------------------------------------
+ex 3.22
+
+(define (make-queue)
+  (let ((front-ptr '())
+        (rear-ptr '()))
+    
+    (define new-item '())
+    
+    (define (isempty?) (null? front-ptr))
+    
+    (define (insert item)
+      (set! new-item (cons item '()))
+      (cond ((isempty?) 
+             (begin 
+              (set! front-ptr new-item)
+              (set! rear-ptr new-item)
+              front-ptr))
+            (else
+             (begin (set-cdr! rear-ptr  new-item)
+                    (set! rear-ptr new-item) 
+                    front-ptr))))
+    
+    (define (delete-front)
+      (cond ((isempty?) (error "queue is empty") )
+            (else 
+             (begin 
+              (set! front-ptr (cdr front-ptr)) 
+              front-ptr))))
+    
+    (define (get-front) (if (isempty?) 
+                            (error "queue is empty")
+                            (car front-ptr)))
+    
+    (define (print) front-ptr)
+   
+    (define (dispatch m)
+      (cond ((eq? m 'insert) insert)  
+            ((eq? m 'delete-front) delete-front)
+            ((eq? m 'get-front) get-front)
+            ((eq? m 'print) print)))
+    
+    dispatch))
+    
+; We can ovserve that the message passing technique is more like a the "dot notation technique in current programming languages" which you give some funtion you want depending on the current you pass the object from and it do the job.
+; while the book technique of representing queues tends more to be have a data object in then pass it do some function to do operation on that object.
+; they are both the same form the lower level point of view, but we're taking here about the convience of using the program.
+
+-------------------------------------------------------------------
+ ex 3.23
+ 
+; I didn't change the name of the data strucure to dequeue, I just modified the previous queue.
+; I used a doubly likned list ,where an item in the list is constructed like that --> (cons prev-item-ptr (cons item-value next-item-ptr))
+
+(define (make-queue)
+  (let ((front-ptr '())
+        (rear-ptr '() ))
+    
+    (define new-item '())
+    
+    (define (isempty?) (or (null? front-ptr) (null? rear-ptr)) )
+    
+    (define (insert-rear item)
+      (set! new-item (cons rear-ptr (cons item '())))
+      (cond ((isempty?) 
+             (begin 
+              (set! front-ptr new-item)
+              (set! rear-ptr new-item)
+              (printer front-ptr)))
+            (else
+             (begin (set-cdr! (cdr rear-ptr)  new-item)
+                    (set! rear-ptr new-item) 
+                    (printer front-ptr)))))
+    
+    (define (insert-front item)
+      (set! new-item (cons '() (cons item front-ptr)))
+      (cond ((isempty?) 
+             (begin 
+              (set! front-ptr new-item)
+              (set! rear-ptr new-item)
+              (printer front-ptr)))
+            (else
+             (begin 
+              (set-car! front-ptr new-item)
+              (set! front-ptr new-item)
+              (printer front-ptr)))))
+    
+    (define (delete-front)
+      (cond ((isempty?) (error "queue is empty") )
+            (else 
+             (begin 
+              (set! front-ptr (cddr front-ptr))
+              (if (not (isempty?)) (set-car! front-ptr '()) (set! rear-ptr '()) )
+              (printer front-ptr)))))
+    (define (delete-rear)
+      (cond ((isempty?) (error "queue is empty") )
+            (else 
+             (begin 
+             	(set! rear-ptr (car rear-ptr))
+              	(if (not (isempty?)) (set-cdr! (cdr rear-ptr) '()) (set! front-ptr '()) )
+              	(printer front-ptr)))))
+    
+    
+    (define (get-front) (if (isempty?) 
+                            (error "queue is empty")
+                            (cadr front-ptr)))
+    (define (get-rear) (if (isempty?)
+                           (error "queue is empty")
+                           (cadr rear-ptr)))
+    (define (printer current)
+      (if (null? current) '()
+          (cons (cadr current) (printer (cddr current)))))
+       
+    (define (dispatch m)
+      (cond ((eq? m 'insert-rear) insert-rear)  
+            ((eq? m 'delete-front) delete-front)
+            ((eq? m 'get-front) get-front)
+            ((eq? m 'get-rear) get-rear)
+            ((eq? m 'print) (printer front-ptr))
+            ((eq? m 'insert-front)insert-front)
+            ((eq? m 'delete-rear) delete-rear )
+            ((eq? m '1) front-ptr )))
+    
+    dispatch))
+
+(define new (make-queue))
+((new 'insert-rear) 'A)
+((new 'insert-rear) 'B)
+((new 'insert-rear) 'C)
+((new 'insert-rear) 'D)
+;((new 'insert-front) 'Z)
+;((new 'insert-rear) 'B)
+;((new 'insert-rear) 'C)
+;((new 'print))
+;((new 'insert-rear) 'D )
+;((new 'get-front))
+((new 'delete-front))
+;((new 'delete-front))
+
+((new 'delete-rear))
+((new 'delete-front))
+((new 'delete-front))
+;((new 'insert-front) 'F)
+((new 'insert-rear) 'D)
+((new 'insert-front) 'B)
+;(cddr(new '1))
+((new 'delete-rear))
+((new 'get-rear))
+
+((new 'delete-front))
+;((new 'get-front))
+
+
+;((new 'print))
 
 

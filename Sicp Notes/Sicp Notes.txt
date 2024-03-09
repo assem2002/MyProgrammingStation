@@ -1,3 +1,9 @@
+Notions About The Book
+
+- The book uses the approach in learning could be called as "I'll Make Your mind Blow up because of the load of questions and assumptions I'll force you to think about while doing the exercises, then I will clearify them to you just after two pages."
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 2.1.3 - What is meant by data?
 
 '''''
@@ -128,6 +134,17 @@ the book starts to introduce a new prespective of how we look to procedure calls
 - if an environment encapsulated indside another one have the same vaiable as its super environment, it does what's called shadowing to the varibles, and just start acting on its own variables.
 - An environment is only created whenever you call a procedure and if it has parameters, it binds those paramters to the arguments you've passed to it, if shodwing is necessary it does it.
 so when ever you define a procedure or a variable in an environment they get binded in the table, and when you start calling the procedure , what happens is we build another environment pointing to the current one and we start messing around in that environment till we fininsh our job.
+----------------------------------------------
+sharing when we introduce mutators (see figure 3.16 + 3.17 )
+''''
+
+in the whole previous 2 chapters, We were dealing with any data object as non-mutable thing.
+but with introduction of mutators we now face the sameness issue which leads to the pointer notion.
+with pointers now you can look at any thing as a pointer which encapsulate some data.whenever you change a variable it remains the same capsule (data object) but with different data in the capsule.
+this leads us to the sharing idea, though it was there from the begining ,but it was undetectable.now it becomes significant to see it.
+
+
+
 
 
  
