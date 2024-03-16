@@ -2378,4 +2378,378 @@ ex 3.22
 
 ;((new 'print))
 
+-------------------------------------------------------------
+ex 3.24
+
+
+
+(define (make-table same-key?)
+  (define (assoc key records)
+	(cond ((null? records) false)
+			((same-key? key (caar records)) (car records))
+	(else (assoc key (cdr records)))))
+  
+	(let ((local-table (list '*table*)))
+	(define (lookup key-1 key-2)
+		(let ((subtable
+				(assoc key-1 (cdr local-table))))
+		(if subtable
+			(let ((record
+			(assoc key-2 (cdr subtable))))
+				(if record (cdr record) false))
+				false)))
+	(define (insert! key-1 key-2 value)
+		(let ((subtable
+				(assoc key-1 (cdr local-table))))
+			(if subtable
+				(let ((record
+				(assoc key-2 (cdr subtable))))
+				(if record
+					(set-cdr! record value)
+					(set-cdr! subtable
+							(cons (cons key-2 value)
+								(cdr subtable)))))
+			(set-cdr! local-table
+				(cons (list key-1 (cons key-2 value))
+				(cdr local-table)))))
+	'ok)
+	(define (dispatch m)
+		(cond ((eq? m 'lookup-proc) lookup)
+				((eq? m 'insert-proc!) insert!)
+		(else (error "Unknown operation: TABLE" ))))
+	dispatch))
+
+(define (predicate? lookup-key current-key) 
+  (eq? lookup-key current-key ))
+
+(define mytable (make-table predicate?))
+((mytable 'insert-proc!) 'a 'b 55)
+((mytable 'lookup-proc)'a 'b)
+
+;just get the assoc procedure into the make-table so it can access "make-table" procedure frame ,so it now has access to the same-key? parameter.
+---------------------------------------------------------
+ex 3.25
+
+
+(define (make-table same-key?)
+  (define (assoc key records)
+	(cond ((or (null? records) (not (pair? records)) ) false)
+			((same-key? key (caar records)) (car records))
+	(else (assoc key (cdr records)))))
+  (define (asssoc key records)
+    (cond ((or (null? records) (not (pair? records)) ) false)
+          ()
+          ))
+  
+	(let ((local-table (list '*table*)))
+	(define (lookup key-1 key-2)
+		(let ((subtable
+				(assoc key-1 (cdr local-table))))
+		(if subtable
+			(let ((record
+			(assoc key-2 (cdr subtable))))
+				(if record (cdr record) false))
+				false)))
+      
+     (define (assoc-arbitrary keys-list) ;New modification.
+       (define (iter current-key table)
+         (if (null? current-key) (cons '() table)
+         (let ((subtable (assoc (car current-key) (cdr table)))) 
+           (if subtable
+               	(iter (cdr current-key) subtable)
+               (cons current-key table)))))
+       (iter keys-list local-table))
+      
+      (define (lookup-arbitrary . keys) ;New modification.
+        (set! keys (append keys '(value) ))
+        (let ((res (assoc-arbitrary keys)))
+          (if (null? (car res)) (cddr res)
+              false)))
+      
+	(define (insert! key-1 key-2 value) 
+		(let ((subtable
+				(assoc key-1 (cdr local-table))))
+			(if subtable
+				(let ((record
+				(assoc key-2 (cdr subtable))))
+				(if record
+					(set-cdr! record value)
+					(set-cdr! subtable
+							(cons (cons key-2 value)
+								(cdr subtable)))))
+			(set-cdr! local-table
+				(cons (list key-1 (cons key-2 value))
+				(cdr local-table)))))
+	'ok)
+      
+     (define (insert-mod! value . keys) ;New modification.
+       (set! keys (append keys '(value) ))
+       (define (iter table)
+         (let ((res (assoc-arbitrary keys))) 
+           (let ((remaining-keys (car res))
+                 (current-table (cdr res))) 
+             (if (null? remaining-keys) (set-cdr! current-table value)
+                 (begin (set-cdr! current-table 
+                                  (cons 
+                                   (cons (car remaining-keys) '())
+                                   (cdr current-table)))
+                        (iter  current-table)
+                  )))))
+       (iter local-table) 'ok)
+      
+	(define (dispatch m)
+		(cond ((eq? m 'lookup-proc) lookup-arbitrary)
+				((eq? m 'insert-proc!) insert-mod!)
+		(else (error "Unknown operation: TABLE" ))))
+	dispatch))
+
+(define (predicate? lookup-key current-key) 
+  (eq? lookup-key current-key ))
+
+(define mytable (make-table predicate?))
+((mytable 'insert-proc!) 55 'a  )
+((mytable 'insert-proc!) 45 'a 'b 'c)
+((mytable 'insert-proc!) 66 'a 'b 'l )
+
+((mytable 'lookup-proc)'a)
+((mytable 'lookup-proc)'a 'b 'c)
+((mytable 'lookup-proc)'a 'b 'l)
+
+---------------------------------------------------------------
+ex 3.26 - (WARNING: This solution isn't compelte yet - I wanted to develpp a version to handle multiple keys with binary search technique)
+
+
+'((key another-dimension) (left right))
+
+(define (make-table same-key?)
+  (define (assoc key records)
+	(cond ((or (null? records) (not (pair? records)) ) false)
+			((same-key? key (caar records)) (car records))
+	(else (assoc key (cdr records)))))
+  
+  (define (assoc-binary key records) ; it gives you a pair and instructions to handle that pair (instruction-where-to-go pair)
+    (cond ((or (null? (cdr records)) (not (pair? records))) (cons 'cdr records))
+          ((< key (caar records)) (if (null? (cadr records)) (cons 'car (cdr records)) (assoc key (cadr records))))
+          ((> key (caar records)) (if (null? (cddr records)) (cons 'cdr (cdr records))(assoc key (cddr records))))
+          ((= key (caar records)) (cons 'cdr (car records)) )))
+  
+	(let ((local-table (list '*table*)))
+	(define (lookup key-1 key-2)
+		(let ((subtable
+				(assoc key-1 (cdr local-table))))
+		(if subtable
+			(let ((record
+			(assoc key-2 (cdr subtable))))
+				(if record (cdr record) false))
+				false)))
+      
+     (define (assoc-arbitrary keys-list) ;New modification.
+       (define (iter current-key table)
+         (if (null? current-key) table
+         (let ((subtable (assoc (car current-key) (cdr table)))) 
+           (if subtable
+               	(iter (cdr current-key) subtable)
+               (cons current-key table)))))
+       (iter keys-list local-table))
+      
+      (define (lookup-arbitrary . keys) ;New modification.
+        (set! keys (append keys '(value) ))
+        (let ((res (assoc-arbitrary keys)))
+          (if (null? (car res)) (cddr res)
+              false)))
+      
+	(define (insert! key-1 key-2 value) 
+		(let ((subtable
+				(assoc key-1 (cdr local-table))))
+			(if subtable
+				(let ((record
+				(assoc key-2 (cdr subtable))))
+				(if record
+					(set-cdr! record value)
+					(set-cdr! subtable
+							(cons (cons key-2 value)
+								(cdr subtable)))))
+			(set-cdr! local-table
+				(cons (list key-1 (cons key-2 value))
+				(cdr local-table)))))
+	'ok)
+      
+     (define (insert-mod! value . keys) ;New modification.
+       (set! keys (append keys '(value) ))
+       (define (iter table)
+         (let ((res (assoc-arbitrary keys))) 
+           (let ((remaining-keys (car res))
+                 (current-table (cdr res))) 
+             (if (null? remaining-keys) (set-cdr! current-table value)
+                 (begin (set-cdr! current-table 
+                                  (cons 
+                                   (cons (car remaining-keys) '())
+                                   (cdr current-table)))
+                        (iter  current-table)
+                  )))))
+       (iter local-table) 'ok)
+      
+	(define (dispatch m)
+		(cond ((eq? m 'lookup-proc) lookup-arbitrary)
+				((eq? m 'insert-proc!) insert-mod!)
+		(else (error "Unknown operation: TABLE" ))))
+	dispatch))
+
+(define (predicate? lookup-key current-key) 
+  (eq? lookup-key current-key ))
+
+(define mytable (make-table predicate?))
+((mytable 'insert-proc!) 55 '1  )
+((mytable 'insert-proc!) 45 'a 'b 'c)
+((mytable 'insert-proc!) 66 'a 'b 'l )
+
+((mytable 'lookup-proc)'1)
+((mytable 'lookup-proc)'a 'b 'c)
+((mytable 'lookup-proc)'a 'b 'l)
+
+
+
+
+
+ 
+--------------------------------------------------------
+ex 3.27
+
+-Not solved
+
+-----------------------------------------------------
+ex 3.28
+
+
+(define (or-gate a1 a2 output) 
+  (define (or-gate-procedure)
+    (let ((new-value (logical-or (get-signal a1) (get-signal a2)))) 
+      (after-delay or-gate-delay (lambda ()
+                                   		(set-signal! output new value)))))
+  (add-action! a1 or-gate-procedure)
+  (add-action! a2 or-gate-procedure)
+  'ok)
+  
+---------------------------------------------------
+ex 3.29
+
+
+(define (or-gate a1 a2 output)
+  (let ((a1-neg (make-wire)) 
+         (a2-neg (make-wire))
+        (res (make-wire)))
+    (inverter a1 a1-neg)
+    (inverter a2 a2-neg)
+    (and-gate a1-neg a2-neg res)
+    (inverter res output)
+    'ok))
+;there's 4 types of delays in this function; but when such a function is invoked only one of the first two inverters is gonna work,so the total delay is (inverter-delay + and-gate-delay + inverter-delay)  
+--------------------------------------------------
+ex 3.30
+
+(define (ripple-carry-adder A-list B-list s-list c)
+	(define (ripple-carry-adder-iter A-list B-list s-list c-in c-out)
+  	(if (null? A-list) c-in
+   		(begin 
+    	(full-adder (car A-list) (car B-list) c-in (car s-list) c-out)
+  		(ripple-carry-adder (cdr A-list) (cdr B-list) (cdr s-list) c-out (make-wire)))))
+  (set-signal! c (rippl-carry-adder-iter A-list B-list s-list (make-wire) (make-wire))))
+  
+----------------------------------------------------
+ex 3.31
+
+After so much diging into the internet, I found that not executing the procedures that the wire has whenever it gets added to it would make so many problems.
+thing like an inverter box which has two wire input and output, if the functionality of the wire is not applied right away, the inverter would have a state of (0 --inverter--> 0) because the wire preserve
+their inital local state which is "zero".
+-------------------------------------------------------
+ex 3.32
+initially the agenda has the following when wires(a1,a2) set to be a part of ang-gate:   (3,set-signal c 0) --> (3,set-signal c 0)
+ 
+
+sitting the and-gate to be (0,1) will add the following into the agenda : (3,set-signal c 0)
+
+so now we have the following in the agenda to be propagated :  (3,set-signal c 0) --> (3,set-signal c 0) --> (3,set-signal c 0)
+this will result to c = 0 (whether using FIFO or LIFO) (stack or queue)
+
+change wire singals to (1,0) will result in the following to be added into the agenda : (6,set-signal c 1) --> (6,set-signal c 0)
+
+this will result in c =0  (if we use FIFO (queue))
+and will result in c =1 (if we use LIFO (stack))
+----------------------------------------------------------
+ex 3.33
+
+
+(define (averager a b c)
+  (let (( u (make-connection))
+        (v (make-connection))) 
+    (adder a b u)
+    (constant 0.5 v)
+    (multiplier u v c)))
+---------------------------------------------
+ex 3.34 
+
+from first look, you can see that every thing is working fine.
+but we forget to look at this program is a non-directional program, so when you tell me that we have squarer so i expect to do squaring and square root, which doesn't work here.
+
+--------------------------------------------
+ex 3.35
+
+
+(define (squarer a b)
+	(define (process-new-value)
+		(if (has-value? b)
+			(if (< (get-value b) 0)
+				(error "square less than 0: SQUARER" (get-value b))
+					(set-value! a (sqrt (get-value b)) me))
+		(set-value! b (square (get-value a)) me)))
+(define (process-forget-value) 
+  (forget-value! a me)
+  (forget-value! b me)
+  (process-new-value))
+
+(define (me request) 
+  (cond (eq? request 'I-have-a-value) process-new-value
+        (eq? request 'I-lost-my-value) process-forget-value))
+(connect a me)
+(connect b me)
+me)
+--------------------------------------------------
+ex 3.36
+
+The drawing goes up to 7 enviornment just to evaluate the procedure in question.
+sooooo yeah I won't write an explanation. (it's easy to draw BTW).
+
+--------------------------------------------------
+ex 3.37
+(define (c- a b)
+  (let ((z (make-connector))) 
+    (adder a (- b) z)
+    z))
+(define (c/ a b)
+  (let ((z (make-connector))) 
+    (if (= b 0) (error "division by 0")
+        (begin
+         (multiplier z b a)
+         z))))
+(define (c* a b)
+  (let ((z (make-connector)))
+    (multipler a b z)
+    z))
+(define (cv x)
+  (constant x cv))
+---------------------------------------------------------
+ex 3.38
+a)
+ 
+- There's 6 possible orders (3*2*1).
+-> peter paul mary --> 45
+-> peter mary paul --> 35
+-> paul peter mary --> 45
+-> paul mary peter --> 50
+-> mary peter paul --> 40
+-> mary paul peter --> 40
+
+b)
+If the three operations happen concurrently and somehow all of them posses the value $100, this would result in a finial value of ethier 110,80,50 which are all wrong (relative to the amount of money in and out of the bank account)
+
 

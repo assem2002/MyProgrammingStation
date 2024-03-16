@@ -142,6 +142,12 @@ in the whole previous 2 chapters, We were dealing with any data object as non-mu
 but with introduction of mutators we now face the sameness issue which leads to the pointer notion.
 with pointers now you can look at any thing as a pointer which encapsulate some data.whenever you change a variable it remains the same capsule (data object) but with different data in the capsule.
 this leads us to the sharing idea, though it was there from the begining ,but it was undetectable.now it becomes significant to see it.
+--------------------------------------------------
+Concurrency : Time is of the esssence.(see figure 3.29)
+'''
+Concurrent programs arises a very serious issue,It's the issue of what piece of information your current procedure possess and what value the procedure is going to assign to the local variable that describes the object.
+Even resolving conccurent programs main issue and handling it in some sequential order makes some problems too,but not catastrophic as dealing with conccurency without and attention. 
+
 
 
 
