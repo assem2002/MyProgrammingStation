@@ -150,6 +150,22 @@ Even resolving conccurent programs main issue and handling it in some sequential
 
 
 
+serialization
+'''
+//TO DO 
+
+
+
+DeadLock
+'''
+//TO DO
+
+
+------------------------------------
+Streams
+'''
+//TO DO : write about the methdology followed in here.
+
 
 
 

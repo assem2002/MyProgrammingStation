@@ -2751,5 +2751,143 @@ a)
 
 b)
 If the three operations happen concurrently and somehow all of them posses the value $100, this would result in a finial value of ethier 110,80,50 which are all wrong (relative to the amount of money in and out of the bank account)
+------------------------------------------------------------
+ex 3.39
+
+the first procedure has the set x out of the seralizer, which gives the possiblity of the second procedure to access either (10 or 11 or (11 and 10)) -remember that second procedure access x twice-.
+so we would be left with the following x =  (10*10),(11*11),(11*10) and the set x in first procedure could wait till second procedure sets x to whatever and then set! x make the varaible x end up with 11 or 10.
+
+so all 5 possibilties exist still.
+----------------------------------------------------------
+ex 3.40
+
+100000,10000,1000,1000000,100
+they're 6 possibilites but they come out of 7 possible combinations
+
+--> After using serializer, we obtain 1000000 and both of the possibilties.
+-------------------------------------------------------------
+ex 3.41
+
+It has no effect to use such a thing if both withdraw and deposit procedures are in the serializer, so we obtain the same balance access whether you serialized the access balance procedure or not.
+
+----------------------------------------------------------
+ex 3.42
+
+From the original implementation, it seems that serializer work like a queue of procedure object and you can't operate on any procedure in this queue unless it's the front one of the whole queue.
+The implementation in this problem seems to get a return from the serialzer and save it for further calls to the dispatch procedure. 
+Potentially, both proteced-withdraw and protected-deposit are valid to use just only for the first time then they get removed from the queue and they wait for another insertion in the serialzer.
+
+-----------------------------------------------------
+ex 3.43
+account 1 -> 30
+account 2 -> 20
+account 3 -> 10
+
+-If the following process happens 'account1 withdraw' --> 'account2 withdraw' --> 'account2 deposit' --> 'account 3 depoist'.
+This will result in the following balances --> (20,20,20).
+which violates the presumed balances, but still has the same amount of money which is 60.
+
+- If exchange procedure got invoked on an object that doesn't use serialization, this would result in the following possibilties:
+ balances in order (20,30,20)
+ 				   (20,10,20)
+
+the problem essentially happens from the reading of balance local state in account 2 as it's the account that has two opreations happening concurrently.
+
+---------------------------------------------------
+ex 3.44
+
+The procedure needs to serialization.
+The main differnce between transfer and exchange, is just the responsibility they are assigned to do.
+exchange does what it's told to do prefectly,but what's meant from it is to exchange the account balances, not just to calculate some number and then do deposit and withdraw.
+
+-------------------------------------------------
+ex 3.45
+
+exchange procedure when called both acc1 and acc2 will be operating on the procedure and will be do nothing else but this procedure till it get done.
+the problem arises when exhcange procedure start make withdraw and deposit from acc1 and acc2, these two proecure will never return a value untill exchange itself has done its work.
+so the program will never return.
+------------------------------------------------
+ex 3.46
+
+The mutex purpose would fail if two procedure tries to aquire the mutex and they both access the memory place where cell is set to false.
+both of them would start to operate and we would have the same problem we were mentioning from the start.
+-------------------------------------------------
+ex 3.47
+
+(define (make-semaphore)
+  (let ((mutex (make-serializer))
+        (procedures (list '())) ;queue here is prefered
+        (args (list '()))
+        (n 10))
+   		(define (pusher)
+          (if (not(null? procedures)) 
+          (begin ((apply (mutex (car procedures)) (car args))) 
+                 (set! procedures (cdr procedures))
+                 (set! args (cdr args))
+                 (pusher))))
+    	(define (func p . args_)
+          (if ( = (length procedure) n) (apply func (cons p args_))
+              (begin (set! procedures (cons p procedures))
+                     (set! args (cons  args_ args))
+               (if (null? procedures) (pusher)))))
+    	func))
+
+--------------------------------------------------------
+ex 3.48
+
+
+(define (serialized-exchange account1 account2)
+	(let ((serializer1 (account1 'serializer))
+		(serializer2 (account2 'serializer))
+          (id1 (account1 'identity)
+          (id2 (account2 'identity))
+         (if (< id1 id2)((serializer2 (serializer1 exchange))      
+		((serializer1 (serializer2 exchange)))
+	account1
+	account2)))
+--------------------------------------------------------
+ex 3.49
+
+if balance is protected resource,and we have a function that gets the minimum number in all accounts (this function is embdeed in all the accounts and they just loop on list of accounts in a recursive way).
+two accesses to this function would lead to deadlock as the the recursive proccess may get interrupted in the middle of evaluating the minimum balance.
+
+--------------------------------------------------------
+ex 3.50
+
+(define (stream-map proc . argstreams)
+	(if (stream-null? (car argstreams))
+		the-empty-stream
+	(cons-stream
+	(apply proc (map stream-car argstreams))
+	(apply stream-map
+		(cons proc (map stream-cdr argstreams))))))
+----------------------------------------------------
+ex 3.51
+
+-> 0
+
+-> 0
+   1
+   2
+   3
+   4
+   5
+-> 0
+   1
+   2
+   3
+   4
+   5
+   6
+   7
+------------------------------------------------------
+ex 3.52
+
+(stream-ref y 7) -> 136
+
+filter of even would go like this ---> 1 3 6 10 15 21 28 36 45 55 66 78 91 105 120 136
+
+(display-stream z) --> if seq doesn't have in delay in seq untill it reaches 136 which is number 16 ---> the process would like that ->1 3 6 10 15 21 28 36 45 55 66 78 91 105 120 136 153 171 190 and then stops
+if doesn't memoize it will stop at 10
 
 
