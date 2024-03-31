@@ -36,6 +36,7 @@ ex.1.31
 
 
 
+
 (define (product term a next b)
   (if (> a b) 1
       (* (term a ) (product term (next a) next b) )))
@@ -2889,5 +2890,211 @@ filter of even would go like this ---> 1 3 6 10 15 21 28 36 45 55 66 78 91 105 1
 
 (display-stream z) --> if seq doesn't have in delay in seq untill it reaches 136 which is number 16 ---> the process would like that ->1 3 6 10 15 21 28 36 45 55 66 78 91 105 120 136 153 171 190 and then stops
 if doesn't memoize it will stop at 10
+---------------------------------------------------
+ex 3.53
+
+--> The list would get constucted as follows => (1 (2 delay)) ==> (1(2(4 delay)))) ..... and so on
+-----------------------------------------------------
+ex 3.54
+
+(define (mul-streams s1 s2)
+	(stream-map * s1 s2))
+	
+(define factorials
+(cons-stream 1 (mul-streams (cdr-stream integers) factorials)))
+----------------------------------------------------------
+ex 3.55
+
+(define (partial-sum seq)
+	(define internal
+	(cons-stream (car-stream seq) (add-stream (cdr-stream seq) internal) )))
+--------------------------------------------------------
+ex 3.56
+
+(define S (cons-stream 1 (merge (scale-stream integers 2) (merge (scale-stream integers 3) (scale-stream integers 5) ))))
+-------------------------------------------------------
+ex 3.57
+
+It takes n number of steps to get to the nth fibonacci number.
+if data isn't saved it would take almost 2^n (the same outragious tree of recursive fibonacci).
+-----------------------------------------------------
+ex 3.58
+it provides a an infinite sequence of digits for rational numbers.
+-> (1 7 10) --> 1 4 2 8 5 7
+-->(3 8 10) --> 3 7 5
+-----------------------------------------------------------
+
+ex 3.59
+
+(define (integrate-series s)
+  (define local-state 1)
+  (define (internal ss)
+    (cons-stream (begin (set! local-state (+ local-state 1)) 
+                        (* (/ 1 (- local-state 1)) (stream-car ss)) 
+                 (internal (stream-cdr ss)))))
+  (internal s))
+; We can use the 'integers starting from' stream which will do the local state job.
+
+(define (integrate-series s)
+ (stream-map / s (integer-starting-from 1)))
+
+;Extremely tricky
+(define (negate-series s)(cons-stream (- (car-stream s)) (cdr s) ))
+(define cosine-series (cons-stream 1 (negate-series (integrate-series sine-series))))
+(define sine-series (cons-stream 0 (integrate-series cosine-series)))
+
+----------------------------------------------------------
+ex 3.60
+
+(define (mul-series s1 s2)
+(cons-stream (* (car-stream s1 ) (car-stream s2)) 
+	(add-stream (scale-stream  (cdr-stream s1) (car-stream s1) )
+	(mul-stream s2	 (cdr-stream s1) ))))
+---------------------------------------------------
+ex 3.61
+(define (inverter ss)
+  (define X
+  (cons-stream 1 (- (mul-series (cdr-stream ss) X)) )))
+----------------------------------------------
+ex 3.62  
+
+(define (inverter ss)
+  (define X
+  (cons-stream 1 
+               (lambda (y) 
+                 (if (= y 0)
+                     (error "division by zero") y))
+               (- (mul-series (cdr-stream ss) X)))))
+
+
+(define (divide-series s1 s2)
+  (mul-series s1 (inverter s2)))
+----------------------------------------
+ex 3.63
+
+(cons 1.0 (promise to improve (sqrt-stream x)))
+|
+|__> if you ask for cdr ---> **New (cons 1.0 (promise to improve (sqrt-stream x))) --> the car of this gets pushed to the first one resulting in (cons 1.0 (cons 1.0  (promise to improve (sqrt-stream x)) ))
+	 |
+	 |__> if your ask for another cdr -->****New (cons 1.0 (promise to improve (sqrt-stream x))) --> this will be push to **New resulting in  (cons 1.0 (cons 1.0  (promise to improve (sqrt-stream x)) )) which 
+	 		will be push to the main one resulting in (cons 1.0 (cons 1.0(promise to improve (sqrt-stream x)))) 
+	 		
+and so on.
+
+
+removing memoziation will lead to no differnce as the stream gets generated out of saved cdr of the guesses sequence so memoziation doesn't play a great rule in here.
+-----------------------
+ex 3.64
+
+(define (stream-limit s tolerance)
+  (define (internal ss)
+    (if (<= (abs (- (stream-cdr ss) (stream-car ss))
+         tolerance))
+        (stream-cdr ss)
+        (internal (stream-cdr))))
+        (internal s))	
+        
+------------------------
+ex 3.65
+The interperter i use has some issues with delay and force, so I can't preform the computations.
+but overall it seems to be much more faster to use the accelarated type.
+
+------------------------------
+ex 3.66
+
+as data is interleaving and you want to get (1,100)
+and the first part is constantly evolving (1,n),(1,n+1),(1,n+2)
+
+so if it needs n step to get to some number now it needs 2*n => 200 step to get to (1,100)
+
+(99,100) I can't get the answer to that at the moment
+
+------------------------------------
+ex 3.67
+
+(define (pairs s t)
+(cons-stream
+(list (stream-car s) (stream-car t))
+(interleave
+(stream-map (lambda (x) (list (stream-car s) x))
+(stream-cdr t))
+(pairs (stream-cdr s) t))))
+
+; why to add new sequence while i can just move to the next row
+
+
+
+-----------------------------
+ex 3.68
+
+the call to (pairs (stream-cdr s) (stream-cdr t) ) => will result in infinite recursive call.
+
+-------------------------
+ex 3.69
+
+(define (triples s t u)
+	(cons-stream
+	(list (stream-car s) (stream-car t) (stream-car u))
+	(interleave 
+		(stream-map (lambda (x) (list (stream-car s) (stream-car t) x)) u) 
+		(interleave
+			(stream-map (lambda (x) (list (stream-car s) x (stream-car u) )) t)
+				(interleave
+			(stream-map (lambda (x) (list x (stream-car t) (stream-car u) )) t) ; I think this is reduendent to what we want to achive
+				(triples (stream-cdr s) (stream-cdr t) (stream-cdr u) )))))
+---------------------------
+ex 3.70
+
+(define (merge-weighted s1 s2 w)
+	(cond ((stream-null? s1) s2)
+	 	((stream-null? s2) s1)
+		(else (let ((first(w (stream-car s1)))
+			(second (w (stream-car s2))))
+			(cond (( < first second) (cons-stream s1 (merge-weighted (stream-cdr s1) s2 w)))
+				(else (cons-stream s2 (merge-weighted s1 (stream-cdr s2) w))))))))
+				
+
+(define (interleave s1 s2 w)
+(if (stream-null? s1)
+s2
+(merge-weighted (stream-car s1)
+(interleave s2 (stream-cdr s1)) w )))
+
+(define (pairs-weighted s t w)
+(merge-weighted
+(list (stream-car s) (stream-car t))
+(interleave
+(stream-map (lambda (x) (list (stream-car s) x))
+(stream-cdr t))
+(pairs-weighted (stream-cdr s) (stream-cdr t)) w )))
+
+---------------------------
+ex 3.71
+(define (ramanujan)
+	(define (cube x) (* x x x ))
+	(define weight (lambda (x ) (+ (cube (car x))(cube (cadr x))) ) )
+	(define seq (pair-weighted integers integers weight))
+	(define (filter s)
+		(cond ((= (weight  (stream-car s) )
+					(weight (stream-cdr s))) (cons-stream (weight  (stream-car s)) 
+																			(filter (stream-cdr s) ) ))
+		(else (filter (stream-cdr s)))))
+	filter seq)
+----------------------------------
+ex 3.72
+(define (solve)
+	(define weight (lambda (x) (+ (square (car x)) (square (cdr x)))))
+	(define seq (pairs-weighted integers integers weight))
+	(define (filter s)
+		(cond ((= (w (stream-car s))
+				(w (car(stream-cdr s)))
+				(w (car(stream-cdr (stream-cdr s)))))
+				(cons-stream (w (stream-car s))
+				(filter (stream-cdr s))))
+		(else (filter(stream-cdr s))))))
+
+
+
+				
 
 
