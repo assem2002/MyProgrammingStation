@@ -166,6 +166,8 @@ Streams
 '''
 //TO DO : write about the methdology followed in here.
 
+streams approach removes our worry about time and return the function definition back to its original one, which is a set of expression that return the same value as long as provided the same arguments. Streams make objects timeless.
+
 
 
 

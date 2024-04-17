@@ -1,0 +1,17 @@
+(define (random-in-range low high)
+    (let ((range (- high low)))
+    (cons-stream (+ low (random range))) (random-in-range low high)))
+
+(define (monte-carlo-integral f x1 x2 y1 y2)
+    (define area (*(abs(- x2 x1))
+                (abs(- y2 y1))))
+    (define random-streamx (random-in-range x1 x2))
+    (define random-streamy (random-in-range y1 y2))
+    (define (ret tests passed random-streamx random-streamy)
+    (let ((a (f (stream-car random-streamx) ))
+            (b (f (stream-car random-streamy) )))
+        (let ((c (if (a and b) 1 0)))
+    (cons-stream (*(/ (+ passed c) (+ tests 1)) area)
+                (ret (+ test 1) (+ passed c) (stream-cdr random-streamx) (stream-cdr random-streamy))))))
+    (ret 0 0 random-streamx random-streamy))
+

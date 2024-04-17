@@ -1,0 +1,30 @@
+(define (make-frame variables values) ; I find zero use for such a function.
+    (map cons variables values))
+(define (frame-variables frame) (map car frame))
+(define (frame-values frame) (map cdr frame))   
+
+
+(define (add-binding-to-frame! var val frame)
+    (set-cdr! frame (cons (cons var val) (cdr frame) )))
+
+(define (set-variable-value! var val env)
+(define (env-loop env)
+    (define (scan binding)
+        (cond ((null? binding)
+            (env-loop (enclosing-environment env)))
+        ((eq? var (caar binidng )) (set-cdr! (car binding) val))
+        (else (scan (cdr binding)))))
+    (if (eq? env the-empty-environment)
+        (error "Unbound variable: SET!" var)
+        (let ((frame (first-frame env)))
+            (scan (car env)))))
+(env-loop env))
+
+(define (define-variable! var val env)
+(let ((frame (first-frame env)))
+    (define (scan binding)
+        (cond ((null? binding)
+            (add-binding-to-frame! var val frame))
+        ((eq? (caar var) var) (set-cdr! (car binding) val))
+        (else (scan (cdr binding)))))
+(scan (car env))))
