@@ -182,10 +182,17 @@ After implementing the lazy evaluator, you would notice that compilers are not t
 
 ---------------------------------------------
 What is nondeterministic computing? --> In the theory of computation, a nondeterministic finite state machine is one where there may be several possible next states.
+ ------------------------------------------------
+The amb evaluator : is basically the most complex piece of art in this book. It's a piece of software where you have like thousands of environments stacked together and held tight to create the magic of backtracking.
+
+Mainly the evaluator isn't complex to understand as seperate entites, but when you start tracing a small expression through that evalutor things gets stacked up that you'll forget what was i'm just doing.It will show you that you have to deal with evaluators as seperate entities that take care of it ownself because if you start bargning yourself with all of the possible syntactical combination the could exist you would get overwhelmed.
+
+so yeah take your time to read it atmost 3 times otherwise just proceed.
+
+------------------------------
+Logic Programming
+...
+- You use logic programming for expressing what is true, to check whether something is true, to find out what is true.
+- Mainly, what we're concerned about is what is the thing that we want to have or to do.instead of asking ourselves what do we want + how to do that thing.
 
 
-
-
-
- 
- 
