@@ -1,20 +1,25 @@
+
+;NOTE : ANY LINE THAT HAS THE FOLLWOING SYMOBLS ";##################" HAS BEEN MODIFIED OR ADDED.
 (define true #t)
 (define false #f)
 (define apply-in-underlying-scheme apply)
 
-(define (apply procedure arguments)
-(cond ((primitive-procedure? procedure)
-    (apply-primitive-procedure procedure arguments))
-    ((compound-procedure? procedure)
-                (eval-sequence
-                    (procedure-body procedure)
-                    (extend-environment
-                        (procedure-parameters procedure)
-                        arguments
-                        (procedure-environment procedure))))
-    (else
-        (error
-        "Unknown procedure type: APPLY" procedure))))
+
+
+(define (apply procedure arguments env)
+    (cond ((primitive-procedure? procedure)
+        (display arguments)
+        (apply-primitive-procedure
+            procedure
+            (list-of-arg-values arguments env))) ; changed
+          ((compound-procedure? procedure)
+            (eval-sequence
+                (procedure-body procedure)
+                (extend-environment
+                    (procedure-parameters procedure)
+                    (special-actual-values procedure arguments env) ;##################
+                    (procedure-environment procedure))))
+          (else (error "Unknown procedure type: APPLY" procedure))))
 
 (define (eval exp env)
 (cond 
@@ -26,17 +31,73 @@
     ((if? exp) (eval-if exp env)) ; (if predicate? consequent alternative)
     ((lambda? exp) (make-procedure (lambda-parameters exp)
                                 (lambda-body exp)
-                                env))
+                                env  
+                                (lambda-laziness exp)))
     ((begin? exp)
     (eval-sequence (begin-actions exp) env))
     ((unless? exp) (eval-unless exp env))
     ((cond? exp) (eval (cond->if exp) env))
     ((application? exp)
-    (apply (eval (operator exp) env)
-    (list-of-values (operands exp) env)))
+        (apply (actual-value (operator exp) env)
+                     (operands exp) env))
     (else
     (error "Unknown expression type: EVAL" exp))))
 
+
+(define (actual-value exp env)
+    (force-it (eval exp env)))
+
+
+(define (special-actual-values procedure args env) ;##################
+    (define (looper args laziness)
+    (cond ((null? laziness) '())
+            ( (eq? (car laziness) 'normal) 
+                (cons (actual-value (car args) env) (looper (cdr args) (cdr laziness))))
+            ((eq? (car laziness) 'lazy)
+                (cons  (list 'thunk-not-memo (car args) env) (looper (cdr args) (cdr laziness))))
+            ((eq? (car laziness) 'lazy-memo) 
+                (cons  (delay-it (car args) env) (looper (cdr args) (cdr laziness)) ))
+            (else (error "has no : looper" laziness))))
+        (looper args (caddr (cddr procedure))))
+
+(define (list-of-arg-values exps env)
+    (if (no-operands? exps) '()
+        (cons (actual-value (first-operand exps) env)
+              (list-of-arg-values (rest-operands exps) env))))
+
+(define (list-of-delayed-args exps env)
+    (if (no-operands? exps) '()
+        (cons (delay-it (first-operand exps) env)
+            (list-of-delayed-args (rest-operands exps) env))))
+
+(define (force-it-without-memo obj) ;##################
+        (actual-value (thunk-exp obj) (thunk-env obj)))
+
+(define (delay-it exp env)
+    (list 'thunk exp env))
+(define (thunk? obj)
+    (tagged-list? obj 'thunk))
+(define (thunk-not-memo? obj)
+    (tagged-list? obj 'thunk-not-memo))
+(define (thunk-exp thunk) (cadr thunk))
+(define (thunk-env thunk) (caddr thunk))
+
+
+
+(define (evaluated-thunk? obj)
+    (tagged-list? obj 'evaluated-thunk))
+(define (thunk-value evaluated-thunk)
+    (cadr evaluated-thunk))
+(define (force-it obj) ;##################
+    (cond ((thunk? obj)
+        (let ((result (actual-value (thunk-exp obj) (thunk-env obj))))
+            (set-car! obj 'evaluated-thunk)
+            (set-car! (cdr obj) result) ; replace exp with its value
+            (set-cdr! (cdr obj) '()) ; forget unneeded env
+            result))
+        ((thunk-not-memo? obj) (display "should've worked") (force-it-without-memo obj))
+        ((evaluated-thunk? obj) (thunk-value obj))
+        (else obj)))
 
 (define (unless? exp) (tagged-list? exp 'unless))
 (define (eval-unless exp env) 
@@ -108,10 +169,31 @@
         (cddr exp))))
 
 (define (lambda? exp) (tagged-list? exp 'lambda))
-(define (lambda-parameters exp) (cadr exp))
+(define (lambda-parameters exp) ;##################
+    (define (looper exp)
+        (cond 
+            ((null? exp) 
+                    '()) 
+            ((not (pair? (car exp)))
+                 (cons (car exp) (looper (cdr exp))))
+            (else 
+                (cons (caar exp) (looper (cdr exp))))))
+        (looper (cadr exp)))
+
+(define (lambda-laziness exp) ;##################
+    (define (looper exp)
+        (cond 
+            ((null? exp) '())
+            ((not (pair? (car exp))) 
+                (cons 'normal (looper (cdr exp))))
+            ((eq? (cadar exp) 'lazy)
+                (cons 'lazy (looper (cdr exp))))
+            ((eq? (cadar exp) 'lazy-memo) (cons 'lazy-memo (looper (cdr exp))))))
+         (looper (cadr exp)) )
+
 (define (lambda-body exp) (cddr exp))
 
-(define (make-lambda parameters body)
+(define (make-lambda parameters body )
 (cons 'lambda (cons parameters body)))
 
 (define (if? exp) (tagged-list? exp 'if))
@@ -174,8 +256,8 @@
 (define (true? x) (not (eq? x false)))
 (define (false? x) (eq? x false))
 
-(define (make-procedure parameters body env)
-(list 'procedure parameters body env))
+(define (make-procedure parameters body env laziness)
+(list 'procedure parameters body env laziness))
 
 (define (compound-procedure? p)
 (tagged-list? p 'procedure))
@@ -208,7 +290,9 @@
         (error "Too few arguments supplied" vars vals))))
 
 (define (lookup-variable-value var env)
+    ; (display var ) (newline)(display env) (newline) (newline)
 (define (env-loop env)
+    ; (display env)
     (define (scan vars vals)
         (cond ((null? vars)
                 (env-loop (enclosing-environment env)))
@@ -217,6 +301,8 @@
     (if (eq? env the-empty-environment)
     (error "Unbound variable" var)
     (let ((frame (first-frame env)))
+        ; (display (frame-variables frame)) (newline)
+    ;(display (frame-values frame)) (newline)
         (scan (frame-variables frame)(frame-values frame)))))
 (env-loop env))
 
@@ -254,7 +340,8 @@
     (list '= =)
     (list '* *)
     (list '- -)
-    (list '+ +)))
+    (list '+ +)
+    (list '/ /)))
 
 (define (primitive-procedure-names)
     (map car primitive-procedures))
@@ -282,19 +369,31 @@
 
 
 (define (apply-primitive-procedure proc args)
+    ; (display args)
     (apply-in-underlying-scheme
     (primitive-implementation proc) args))
 
-(define input-prompt " ;;; M-Eval input:")
-(define output-prompt ";;; M-Eval value:")
+; (define input-prompt " ;;; M-Eval input:")
+; (define output-prompt ";;; M-Eval value:")
+; (define (driver-loop)
+;     (prompt-for-input input-prompt)
+;     (let ((input (read)))
+;     (let ((output (eval input the-global-environment)))
+;         (announce-output output-prompt)
+;         (user-print output)))
+;         (driver-loop))
+
+(define input-prompt ";;; L-Eval input:")
+(define output-prompt ";;; L-Eval value:")
 (define (driver-loop)
     (prompt-for-input input-prompt)
     (let ((input (read)))
-    (let ((output (eval input the-global-environment)))
-        (announce-output output-prompt)
-        (user-print output)))
-        (driver-loop))
-
+        (let ((output 
+            (actual-value
+                input the-global-environment)))
+            (announce-output output-prompt)
+            (user-print output)))
+    (driver-loop))
 (define (prompt-for-input string)
     (newline) (newline) (display string) (newline))
 (define (announce-output string)

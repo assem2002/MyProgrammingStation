@@ -1,26 +1,69 @@
+(define cadr-underlaying cadr)
+(define (cons x y) (list 'lazy-pair (lambda (m) (m x y))) )
+(define (car z) ((cadr-underlaying z) (lambda (p q) p)))
+(define (cdr z) ((cadr-underlaying z) (lambda (p q) q)))
+(define a (cons 1 2))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define true #t)
 (define false #f)
 (define apply-in-underlying-scheme apply)
 
-(define (apply procedure arguments)
-(cond ((primitive-procedure? procedure)
-    (apply-primitive-procedure procedure arguments))
-    ((compound-procedure? procedure)
-                (eval-sequence
-                    (procedure-body procedure)
-                    (extend-environment
-                        (procedure-parameters procedure)
-                        arguments
-                        (procedure-environment procedure))))
-    (else
-        (error
-        "Unknown procedure type: APPLY" procedure))))
+; (define (apply procedure arguments)
+; (cond ((primitive-procedure? procedure)
+;     (apply-primitive-procedure procedure arguments))
+;     ((compound-procedure? procedure)
+;                 (eval-sequence
+;                     (procedure-body procedure)
+;                     (extend-environment
+;                         (procedure-parameters procedure)
+;                         arguments
+;                         (procedure-environment procedure))))
+;     (else
+;         (error
+;         "Unknown procedure type: APPLY" procedure))))
+
+
+(define (apply procedure arguments env)
+; (display procedure)
+; (newline)
+; (newline)
+; (newline)
+; (newline)
+; (newline)
+; (display arguments)
+; (newline)
+; (newline)
+; (newline)
+; (newline)
+    (cond ((primitive-procedure? procedure)
+        (apply-primitive-procedure
+            procedure
+            (list-of-arg-values arguments env))) ; changed
+          ((compound-procedure? procedure)
+            (eval-sequence
+                (procedure-body procedure)
+                (extend-environment
+                    (procedure-parameters procedure)
+                    (list-of-delayed-args arguments env) ; changed
+                    (procedure-environment procedure))))
+          (else (error "Unknown procedure type: APPLY" procedure))))
+
+(define (map-special l)
+    (define (mapp items)
+        (if (null? items)
+        '()
+    (list 'lambda '(m) (list 'm (car items) (mapp (cdr items))))))
+    (mapp  l))
+
 
 (define (eval exp env)
-(cond 
+(cond
     ((self-evaluating? exp) exp) ;number or string.
     ((variable? exp) (lookup-variable-value exp env)) ; symbol -> 'a
-    ((quoted? exp) (text-of-quotation exp)) ;double quotation
+
+    ((quoted? exp ) (text-of-quotation exp))
     ((assignment? exp) (eval-assignment exp env)) ; ('set! a 3)
     ((definition? exp) (eval-definition exp env)) ; (define b 4)
     ((if? exp) (eval-if exp env)) ; (if predicate? consequent alternative)
@@ -31,12 +74,56 @@
     (eval-sequence (begin-actions exp) env))
     ((unless? exp) (eval-unless exp env))
     ((cond? exp) (eval (cond->if exp) env))
+; ((quoted? exp) 
+; (if (pair? (text-of-quotation exp)) (eval (map-special (text-of-quotation exp)) env )
+;     (text-of-quotation exp))) ;double quotation
     ((application? exp)
-    (apply (eval (operator exp) env)
-    (list-of-values (operands exp) env)))
+        (apply (actual-value (operator exp) env)
+                    (operands exp) env))
     (else
     (error "Unknown expression type: EVAL" exp))))
 
+
+(define (actual-value exp env)
+    (force-it (eval exp env)))
+
+(define (list-of-arg-values exps env)
+    (if (no-operands? exps) '()
+        (cons (actual-value (first-operand exps) env)
+              (list-of-arg-values (rest-operands exps) env))))
+
+(define (list-of-delayed-args exps env)
+    (if (no-operands? exps) '()
+        (cons (delay-it (first-operand exps) env)
+            (list-of-delayed-args (rest-operands exps) env))))
+
+; (define (force-it obj)
+;     (if (thunk? obj)
+;         (actual-value (thunk-exp obj) (thunk-env obj)) 
+;         obj))
+
+(define (delay-it exp env)
+    (list 'thunk exp env))
+(define (thunk? obj)
+    (tagged-list? obj 'thunk))
+(define (thunk-exp thunk) (cadr thunk))
+(define (thunk-env thunk) (caddr thunk))
+
+
+
+(define (evaluated-thunk? obj)
+    (tagged-list? obj 'evaluated-thunk))
+(define (thunk-value evaluated-thunk)
+    (cadr evaluated-thunk))
+(define (force-it obj)
+    (cond ((thunk? obj)
+        (let ((result (actual-value (thunk-exp obj) (thunk-env obj))))
+            (set-car! obj 'evaluated-thunk)
+            (set-car! (cdr obj) result) ; replace exp with its value
+            (set-cdr! (cdr obj) '()) ; forget unneeded env
+            result))
+            ((evaluated-thunk? obj) (thunk-value obj))
+        (else obj)))
 
 (define (unless? exp) (tagged-list? exp 'unless))
 (define (eval-unless exp env) 
@@ -63,6 +150,7 @@
     (eval-sequence (rest-exps exps) env))))
 
 (define (eval-assignment exp env)
+(define a (eval (assignment-value exp) env))
 (set-variable-value! (assignment-variable exp)
     (eval (assignment-value exp) env)
     env)
@@ -222,6 +310,7 @@
 
 
 (define (set-variable-value! var val env)
+
 (define (env-loop env)
     (define (scan vars vals)
         (cond ((null? vars)
@@ -247,14 +336,17 @@
 
 (define primitive-procedures
     (list 
-    (list 'car car)
+    (list 'car car) 
+    (list 'list list)
     (list 'cdr cdr)
     (list 'cons cons)
+    (list 'cadr cadr)
     (list 'null? null?)
     (list '= =)
     (list '* *)
     (list '- -)
-    (list '+ +)))
+    (list '+ +)
+    (list '/ /)))
 
 (define (primitive-procedure-names)
     (map car primitive-procedures))
@@ -285,28 +377,43 @@
     (apply-in-underlying-scheme
     (primitive-implementation proc) args))
 
-(define input-prompt " ;;; M-Eval input:")
-(define output-prompt ";;; M-Eval value:")
+; (define input-prompt " ;;; M-Eval input:")
+; (define output-prompt ";;; M-Eval value:")
+; (define (driver-loop)
+;     (prompt-for-input input-prompt)
+;     (let ((input (read)))
+;     (let ((output (eval input the-global-environment)))
+;         (announce-output output-prompt)
+;         (user-print output)))
+;         (driver-loop))
+
+(define input-prompt ";;; L-Eval input:")
+(define output-prompt ";;; L-Eval value:")
 (define (driver-loop)
     (prompt-for-input input-prompt)
     (let ((input (read)))
-    (let ((output (eval input the-global-environment)))
-        (announce-output output-prompt)
-        (user-print output)))
-        (driver-loop))
-
+        (let ((output 
+            (actual-value
+                input the-global-environment)))
+            (announce-output output-prompt)
+            (user-print output)))
+    (driver-loop))
 (define (prompt-for-input string)
     (newline) (newline) (display string) (newline))
 (define (announce-output string)
-    (newline) (display string) (newline))
+     (newline) (display string) (newline))
 
 (define (user-print object)
-    (if (compound-procedure? object)
+    (cond ((compound-procedure? object)
     (display (list 'compound-procedure
                 (procedure-parameters object)
                 (procedure-body object)
-                '<procedure-env>))
-    (display object)))
+                '<procedure-env>)))
+            ((and (pair? object )(eq? (car object) 'lazy-pair)) 
+                ; (display (list 'car object))
+             (display (list (actual-value (list 'car (list 'quote object)) (cadddr(cadr object)) ) 'rest-of-list...) )
+            )
+    (else (display object))))
 
 (define the-global-environment (setup-environment))
 (driver-loop)

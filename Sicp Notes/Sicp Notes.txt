@@ -168,6 +168,22 @@ Streams
 
 streams approach removes our worry about time and return the function definition back to its original one, which is a set of expression that return the same value as long as provided the same arguments. Streams make objects timeless.
 
+----------------------------------------
+Ch.4 - Lazy evaluation
+
+non-strict procedure : is the type of procedures that starts to operate on its body but the arguments are still not evaluated yet.
+
+strict procedures : have its arguments evaluated beforehand then it enters the body.
+
+these two terminologies are the same as applicative order and normal order, but they describe the procedures not the whole programming language.
+
+-------------------
+After implementing the lazy evaluator, you would notice that compilers are not that smart -- they're completely stupid and we just deal with their stupidty each time we start learning about a new programming language.
+
+---------------------------------------------
+What is nondeterministic computing? --> In the theory of computation, a nondeterministic finite state machine is one where there may be several possible next states.
+
+
 
 
 
