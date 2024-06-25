@@ -192,7 +192,14 @@ so yeah take your time to read it atmost 3 times otherwise just proceed.
 ------------------------------
 Logic Programming
 ...
+- We should always ask about 3 things when we're dealing with programming languages (primitves, means of combination, means of abstraction) 
+- primitve : query
+- means of combination : AND, NOT, OR, LISP-VALUE
+- means of abstraction : Rules
 - You use logic programming for expressing what is true, to check whether something is true, to find out what is true.
 - Mainly, what we're concerned about is what is the thing that we want to have or to do.instead of asking ourselves what do we want + how to do that thing.
+- We can look of how this languages in general would work by look at figure 4.4 (the primitive)
+- We can also look at how the combinations (AND, OR) would work by looking at figure 4.5 + 4.6
+- The closed world assumption : when not true (NOT) means 'It's not deduciable'.
 
 
