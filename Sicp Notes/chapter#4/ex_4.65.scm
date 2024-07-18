@@ -1,4 +1,3 @@
-; We're simply recursivly calling the rule with same inputs over and over again, which simply would result in infinite loop.
-; The previous implementation of 'outranked-by' was calling itself recursivly with one of its argument filled with data which makes the 'supervisor' at some point find no result,
-; which should (as i understand) stop the recursive call.
-; Note : AND implies that when a variable isn't bound the other asssertions should fail.
+; It's not a surpise according to how 'and' is supposed to work as it works as series processing of stream frames so the first assertion of
+; the rule would result in 2 frames and the second assertion would process them and we would have 4 correct answers.
+; As i noticed from solution on the internet, oliver has two people below him and one of them has 3 people below him so the sum is 4.

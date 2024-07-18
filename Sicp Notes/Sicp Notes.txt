@@ -21,9 +21,10 @@ even at some point you can get rid of the integers representation and represent 
 
 '''''''
 
-The book emphasize on the conecpt of clousre properity (the properity of combining data together leading to a data object that itself could be combined with other data object using the same constructors that built this object in the first place).
+The book emphasize on the conecpt of CLOSURE properity (the properity of combining data together leading to a data object that itself could be combined with other data object using the same constructors that built this object in the first place).
 Here is a quote from the author about pairs-data structure "once you can have a pair you can have as many things as you want",
 so we can have lists and trees which are just bunch of pairs connected in a chain.
+or like the and, or, lisp-value we use in logical programming. how data matching and these primitve functions use the same kind of I/O  gave us the capability of sticking them together creating
  -------------------------------------------------------------------
  
  2.2.2 - how the abstraction builds complexity? (p.153 code snippet)
