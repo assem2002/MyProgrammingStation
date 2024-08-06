@@ -203,4 +203,13 @@ Logic Programming
 - We can also look at how the combinations (AND, OR) would work by looking at figure 4.5 + 4.6
 - The closed world assumption : when not true (NOT) means 'It's not deduciable'.
 
+----------------------------------
+Machine register 
+...
+Some implementation trick I would like to write about is the one mentioend in page 706.
+Instead of depending on function to return to data elements to get used, we made a chain of lambdas to do that for us.
+
+......
+
+
 
