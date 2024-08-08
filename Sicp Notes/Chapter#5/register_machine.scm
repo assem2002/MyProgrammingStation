@@ -42,6 +42,7 @@ dispatch))
 (define (pop stack) (stack 'pop))
 (define (push stack value) ((stack 'push) value))
 
+
 ;The default machine
 
 (define (make-new-machine)
@@ -203,7 +204,7 @@ dispatch))
 (define (branch-dest branch-instruction) (cadr branch-instruction))
 
 ;make-goto
-; If the destination is a label, it fetches the  instructions related to this label and sets the pc register to it.
+; If the destination is a label, it fetches the instructions related to this label and sets the pc register to it.
 ; otherwise, it would be a register (I don't know this case till the moment, maybe I can't recall it now).
 (define (make-goto inst machine labels pc)
     (let ((dest (goto-dest inst)))
@@ -217,5 +218,72 @@ dispatch))
 
 (define (goto-dest goto-instruction) (cadr goto-instruction))
 
+
+; save and restore in stack
+; I thought the stack know each register and stores its data in stacked way, but appreantly, It just a plain stack that stores plain data.
+(define (make-save inst machine stack pc)
+    (let ((reg (get-register machine (stack-inst-reg-name inst))))
+        (lambda () (push stack (get-contents reg)) (advance-pc pc))))
+
+(define (make-restore inst machine stack pc)
+    (let ((reg (get-register machine (stack-inst-reg-name inst))))
+        (lambda () (set-contents! reg (pop stack)) (advance-pc pc))))
+
+(define (stack-inst-reg-name stack-instruction)
+    (cadr stack-instruction))
+
+; perform
+; It just does some sort of operation (probably a primitive op)
+
+(define (make-perform inst machine labels operations pc)
+    (let ((action (perform-action inst)))
+        (if (operation-exp? action)
+            (let ((action-proc (make-operation-exp action machine labels operations)))
+                (lambda () (action-proc) (advance-pc pc)))
+            (error "Bad PERFORM instruction: ASSEMBLE" inst))))
+
+(define (perform-action inst) (cdr inst))
+
+
+; make-primitive (It creates procedure at simulation time)
+; either plain constant (known at simulation time),or some set of instructions that should be assigned to some register (I didn't encounter such example)
+; or a value in some register that should be saved in another register (We make a procedure that fetches register content at runtime).
+
+(define (make-primitive-exp exp machine labels)
+    (cond ((constant-exp? exp)
+            (let ((c (constant-exp-value exp))) (lambda () c))) ; ex.(const 1)
+          ((label-exp? exp)
+            (let ((insts (lookup-label labels (label-exp-label exp)))) (lambda () insts)))
+          ((register-exp? exp)
+            (let ((r (get-register machine (register-exp-reg exp)))) (lambda () (get-contents r)))) ;ex.(register something)
+          (else (error "Unknown expression type: ASSEMBLE" exp))))
+
+; some identification procedures
+(define (register-exp? exp) (tagged-list? exp 'reg))
+(define (register-exp-reg exp) (cadr exp))
+(define (constant-exp? exp) (tagged-list? exp 'const))
+(define (constant-exp-value exp) (cadr exp))
+(define (label-exp? exp) (tagged-list? exp 'label))
+(define (label-exp-label exp) (cadr exp))
+
+
+;make-operation
+; actually this procedure is quite simple and very intuitive, but I see it as a beautiful piece that completes this good design.
+; It shows you that we use make-primitve-exp to fetch wrap the primive expression in procedures as they could be register content or label content which can't be grapped at simulation time.
+(define (make-operation-exp exp machine labels operations)
+    (let ((op (lookup-prim (operation-exp-op exp) operations))
+        (aprocs (map (lambda (e) (make-primitive-exp e machine labels)) (operation-exp-operands exp))))
+        (lambda () (apply op (map (lambda (p) (p)) aprocs)))))
+
+(define (operation-exp? exp) (and (pair? exp) (tagged-list? (car exp) 'op)))
+(define (operation-exp-op operation-exp) (cadr (car operation-exp)))
+(define (operation-exp-operands operation-exp) (cdr operation-exp))
+
+; lookup-prim
+; It just looks up the operation in list of installed operations
+(define (lookup-prim symbol operations)
+    (let ((val (assoc symbol operations)))
+    (if val (cadr val)
+        (error "Unknown operation: ASSEMBLE" symbol))))
 
 
