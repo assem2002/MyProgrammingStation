@@ -104,6 +104,13 @@ dispatch))
 ; THE WEIRD thing is, labels don't point for their own part they point to all code below it (I think it won't matter, but it's not intuitive to see that).
 ; The trick is that the last lambda call is the function that waits for two arguments.
 ; so instead of using compound data structure, we made a chain of calls instead of depending on the return to get passed by me to `update-insts!`
+; It requires three functions to do such a trick.
+; assemble -> connects the last domino piece (update-insts!) with extract-labels
+; extract-labels -> do the operations that result in two datastructures
+; update-insts! -> consumes the resulting 2 data structures.
+
+; Notice also : It creates instructions as compound data structure why?. so it can preserve a place for the equivlant lambda function that corresponds to this text
+; so later it can just add lambdas in this preserved place so it can be sharable between labels list and also the normal instruction flow.
 (define (extract-labels text receive)
     (if (null? text)
         (receive '() '())
