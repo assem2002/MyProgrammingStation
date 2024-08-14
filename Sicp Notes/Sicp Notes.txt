@@ -208,8 +208,28 @@ Machine register
 ...
 Some implementation trick I would like to write about is the one mentioend in page 706.
 Instead of depending on function to return to data elements to get used, we made a chain of lambdas to do that for us.
+-------------------------------------
+about how we could represent data and pairs in machine registers
+...
+we depend on typed pointers to make us able to identify the pointers and also to know how to deal with them.
+- pairs strucutre (primitive to our language - it's not a library in lisp) :
+    It divides memory into 2 places- one for `cars` and one for `cdrs`. We would have their base address some how known to us.
+    when we'd like to allocate a pair and have something that represents its pointer, We just hand back an index (wrapped with indication that this is a pointer to pair).
+    then when you want to access this pair all what you're gonna do, is to tell the compiler take that special pointer that indcates a pair and this offset index and get me whatever is in there.
+- numbers structure
+    It's a special pointer that wraps the type (number) with the actual number (data)
+- symbol structure
+    It's the same but for any symbol to be unique in your program and to be used by `eq?` we have to 
+    use like a map to map the characters with the pointer to so any symbol in your program would be unique and two instances would be identified the as the same.
+    It's called 'interning'.
 
-......
+We assume that we have some primitive vector-set and vector-ref functions in lisp:
+ - vector-set : can be given what part (car or cdr) and a pointer (p+index) and the value (wheter a number or character or pointer to pair).
+ - vector-ref : can be given what part (car or cdr) and a pointer (p+index)
+
+  then you can implement any operation you want, such as (cons, car, cdr).
+
+You can find good notes about how to write a good register-machine code in our solution in file ex5_21. 
 
 
 
