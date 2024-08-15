@@ -231,5 +231,26 @@ We assume that we have some primitive vector-set and vector-ref functions in lis
 
 You can find good notes about how to write a good register-machine code in our solution in file ex5_21. 
 
+------------------------
+Garbage Collection
+...
+The book would follow the approach of stop-and-copy.
+The approach works as follows :     
+    We would split memory into 2 halves (free memory + working memory)
+    We would wait for the working memory to get filled
+    once filled, we would go through it finding what pointers aren't accessible by our register (we would use succession to make sure)
+    then we would move the important ones into the free memory in consequtive locations (which is a great advantage)
+    and interchange the roles of free memory and working memory.
+
+
+The implementation :
+    - relocate-old-result-in-new --> It just sets some place to be used by basically adding the pointer in `free` register into what is called `new` register and then incrementing the `free` register + switch on cases (heartbroken, pointer to pair, pointer but not to pair).
+    - gc-flip --> It continues the process that got interupted by the garbage collector.
+    - begin-garbage-collection --> It's the start of the program, it creates a space for the root which the head of registers chain at the current moment we are doing garbage collection and adds the data in the space allocated and add a reminder to assign that new value to the root regiter. 
+    - gc-loop --> It's the pain of the code, the one that always looks up for issues. It checks the equality of scan and free, if not -- it would start handling the data in car (wheter a normal number OR a pointer to moved place then it would just update the car OR It would allocate a space for the a pointer and copy the data in it and also update the car).
+    - Update-car --> is depending on register `new`. It blindly sets the car of pointer in `scan` to the content in `new`. Then, It handles the cdr of the `scan` and do the same as what happend with car.
+    - Update-cdr --> Blindly, sets the cdr of `scan` to the what is in `new` and increments `scan` then moves to gc-loop again. 
+
+
 
 
