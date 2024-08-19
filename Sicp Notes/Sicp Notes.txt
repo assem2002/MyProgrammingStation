@@ -251,6 +251,6 @@ The implementation :
     - Update-car --> is depending on register `new`. It blindly sets the car of pointer in `scan` to the content in `new`. Then, It handles the cdr of the `scan` and do the same as what happend with car.
     - Update-cdr --> Blindly, sets the cdr of `scan` to the what is in `new` and increments `scan` then moves to gc-loop again. 
 
-
+Framed-stack discpline --> It's the discpline that follows the method of memorizing all the registers before hitting a recursive call.
 
 
