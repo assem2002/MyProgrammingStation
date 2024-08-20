@@ -1,56 +1,52 @@
-ev-cond
+;append
+(assign continue (label done))
 (save continue)
-(save unev)
-(test (op last-exp?) (reg exp))
-(goto ev-cond-predicate-last)
-(assign unev (op get-first) (reg exp))
-(assign unev (op get-predicate) (reg unev))
-(save env)
-(assign continue (label ev-cond-predicate-continue))
-(goto eval-dispatch)
-
-ev-cond-predicate-continue
-(test (op true?) (reg val))
-(branch (label cond-true))
-(restore env)
-(restore unev)
-(assign unev (op rest-exps) (reg unev))
-(goto ev-cond)
-
-cond-true
-(restore unev)
-(restore env)
+entry
+(test (op null?) (reg x))
+(branch (label cond1-true))
+(goto (label cond1-false))
+cond1-true
+(assign val (reg y))
 (restore continue)
-(assign unev (op get-first) (reg exp))
-(assign exp (op get-true-exp) (reg unev))
-(assign unev (op get-body) (reg unev))
-(goto ev-sequence)
-
-ev-cond-predicate-last
-(restore unev)
-(save unev)
-(assign unev (op get-first) (reg unev)) 
-(assign unev (op get-predicate) (reg unev))
-(test (op else?) (reg unev))
-(goto (label cond-true))
-(assign continue (label ev-cond-predicate-last-last))
-(restore unev)
-(save unev)
-(save env)
-(assign exp (op get-first) (reg unev)) 
-(goto (label eval-dispatch))
-
-ev-cond-predicate-last-last
-(test (op true?) (reg val))
-(branch (label cond-true))
-(restore unev)
-(restore env)
+(goto continue)
+cond1-false
+(save x)
+(assign x (op cdr) (reg x))
+(assign continue (label after-inner-call))
+(save continue)
+(goto entry)
+after-inner-call
+(restore x)
+(assign temp-car (op car) (reg x))
+(assign val (op cons) (reg val) (reg temp-car) )
 (restore continue)
-(assign val nil)
 (goto continue)
 
 
-
-
-
-
+; append!
+(assign continue (label done-last-pair))
+(save x)
+(save continue)
+entry-last-pair
+(assign temp (op cdr) (reg x))
+(test (op null?) (reg temp))
+(branch (label cond1-true))
+(goto (label cond1-false))
+cond1-true
+(assign ret1 (reg x))
+(restore continue)
+(goto continue)
+cond1-false
+(assign val (op cdr) (reg x))
+(assign continue (label after-inner-call))
+(save continue)
+(goto entry)
+after-inner-call
+; You should've assigned something to val in this spot by the force of the laws we stated before, but it's not needed here. 
+(restore continue)
+(goto continue)
+done-last-pair
+entry-append!
+(restore x)
+(perfrom (op set-cdr!) (reg val) (reg y))
+(assign val (reg x)) ; I intended to use val as the register that maintains the result.
