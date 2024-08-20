@@ -253,4 +253,4 @@ The implementation :
 
 Framed-stack discpline --> It's the discpline that follows the method of memorizing all the registers before hitting a recursive call.
 
-
+tail-recursion --> from the naming, It's looking for a recursive call in the tail of the procedure, if such a thing exists it would be able to do an iterative process rather than a recurisve one.
