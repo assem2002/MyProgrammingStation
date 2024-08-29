@@ -204,3 +204,163 @@ after-lambda))))
 (reg argl)
 (reg env))))
 (compile-sequence (lambda-body exp) 'val 'return))))
+
+
+; It's the same as we did with the interperter
+; we first compile the operator while preserving the `env` and `continue`, you would ask why!
+; let's assume you created a lambda and instatnly called it, the compilation of lambda by creating an initaliazion code and then the code sequence
+; all of this could potenially mutate these register that I need with the other parts I'm trying to build compiled code for
+; secondly, while compiling the opearnds the actuall call sequence would need the `proc` and the `continue` so we preserve them while
+; trying to compile the operands.
+
+;Notice the structure if the procedure was a lambda for instance
+; - assign to target (`proc`) the lambda object
+; - continue to after-lambda
+; - entry point to the actual lambda sequence
+; - after-lambda label
+; - compiling all operands + building up in `argl` register
+; - using the `proc` to fetch the entrypoint and enviornment to start compiling the sequence
+
+(define (compile-application exp target linkage)
+(let ((proc-code (compile (operator exp) 'proc 'next))
+(operand-codes
+(map (lambda
+(operand) (compile operand 'val 'next))
+(operands exp))))
+(preserving '(env continue)
+proc-code
+(preserving '(proc continue)
+(construct-arglist operand-codes)
+(compile-procedure-call target linkage)))))
+
+
+
+; This is responsible for:
+; building up the `argl` register from the resulting data by getting the data out of `val` register
+; if it happens that we don't have operands at first place so it just assigns `argl` to empty list
+; if there's some operands it's mainly resposible for appending a list initalization of `argl` then it proceeds
+; if it happens that there's more that this it moves to `code-to-get-rest-args` that concatentes the rest
+; of the operands
+; Notice that we preserve `argl` between the compilation of the operand and building up it
+; then between the operands + building up, we preserve the env to make sure we have the correct env to compile the operands in. 
+(define (construct-arglist operand-codes)
+(let ((operand-codes (reverse operand-codes)))
+(if (null? operand-codes)
+(make-instruction-sequence '() '(argl)
+'((assign argl (const ()))))
+(let ((code-to-get-last-arg(append-instruction-sequences
+(car operand-codes)
+(make-instruction-sequence '(val) '(argl)
+'((assign argl (op list) (reg val)))))))
+(if (null? (cdr operand-codes))
+code-to-get-last-arg
+(preserving '(env)
+code-to-get-last-arg
+(code-to-get-rest-args
+(cdr operand-codes))))))))
+
+(define (code-to-get-rest-args operand-codes)
+(let ((code-for-next-arg
+(preserving '(argl)
+(car operand-codes)
+(make-instruction-sequence '(val argl) '(argl)
+'((assign argl
+(op cons) (reg val) (reg argl)))))))
+(if (null? (cdr operand-codes))
+code-for-next-arg
+(preserving '(env)
+code-for-next-arg
+(code-to-get-rest-args (cdr operand-codes))))))
+
+
+
+; It follow this structure :
+; - Test whether it's a primitve or a compiled procedure that we're trying to apply
+; - compiled-label
+; - Fetching data from the procedure object (contains entry point and env) + branch to after-call(if the linkage is next)
+; - Primitve-label
+; - the call to the underlying scheme primitve application
+; - after-call label
+
+(define (compile-procedure-call target linkage)
+(let ((primitive-branch (make-label 'primitive-branch))
+(compiled-branch (make-label 'compiled-branch))
+(after-call (make-label 'after-call)))
+(let ((compiled-linkage
+(if (eq? linkage 'next) after-call linkage)))
+(append-instruction-sequences
+(make-instruction-sequence '(proc) '()
+`((test (op primitive-procedure?) (reg proc))
+(branch (label ,primitive-branch))))
+(parallel-instruction-sequences
+(append-instruction-sequences
+compiled-branch
+(compile-proc-appl target compiled-linkage))
+(append-instruction-sequences
+primitive-branch
+(end-with-linkage linkage
+(make-instruction-sequence '(proc argl)
+(list target)
+`((assign ,target
+(op apply-primitive-procedure)
+(reg proc)
+(reg argl)))))))
+after-call))))
+
+
+; I'll write what I understand till the moment
+; this is a directing to the entry point of the function
+; the passed linkage could be label,return,next
+
+; If it's a label or next + target =val (not possible as I think) ; we could utilize `continue` to be the linkage
+; and while we're excuting a sequence the last sequence would've been built with last sequence linkage of return(contiue)
+
+;if it's a target != val + linkage=label ;  We would have a label that would return to after finishing from the entrypoint
+; this label would set the val into the target
+
+; if it's of target = val + linage = return ; this means we're in the last sequence of the list of sequences to be evaluated and we would
+; just use the continue we have
+
+; other wise this is case that's not possible
+
+; This structure makes us able to apply `tail-recursion` as now when we start go into the entry point
+; we just go for it with no building up continue savings into the stack that needs to be restored all when we hit the base case.
+
+
+; NOTICE : this is always called from compile-procedure-call() which\
+; always sets the likage to after-call if the likage of it is 'next'
+(define (compile-proc-appl target linkage)
+(cond ((and (eq? target 'val) (not (eq? linkage 'return)))
+(make-instruction-sequence '(proc) all-regs
+`((assign continue (label ,linkage))
+(assign val (op compiled-procedure-entry)
+(reg proc))
+(goto (reg val)))))
+((and (not (eq? target 'val))
+(not (eq? linkage 'return)))
+(let ((proc-return (make-label 'proc-return)))
+(make-instruction-sequence '(proc) all-regs
+`((assign continue (label ,proc-return))
+(assign val (op compiled-procedure-entry)
+(reg proc))
+(goto (reg val))
+,proc-return
+(assign ,target (reg val))
+(goto (label ,linkage))))))
+((and (eq? target 'val) (eq? linkage 'return))
+(make-instruction-sequence
+'(proc continue)
+all-regs
+'((assign val (op compiled-procedure-entry)
+(reg proc))
+(goto (reg val)))))
+((and (not (eq? target 'val))
+(eq? linkage 'return))
+(error "return linkage, target not val: COMPILE"
+target))))
+
+; The flow isn't easy to grasp on
+; specially that we enforce some behaviour from some places and 
+; according to it we start implementing in special way in another function
+; due to the overhead that happens, sometime you just forget and just keep asking yourself what if what if what if, and eventually you realize 
+; we enforced that behaviour and the case you're trying to think about isn't gonna happen.
