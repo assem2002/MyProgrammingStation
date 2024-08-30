@@ -14,6 +14,12 @@
 ; I think `preserving` is used when you feel that you need to use it to make sure you're preserving what's important for you from your
 ; own current pointer of view.
 
+
+; needed by me --> means I need this register to be not modified be any one that's gonna be inserted before me
+; so who would actually use this register if all of the people before you won't mutate it? 
+
+; modified by me --> tells the second sequence that's gonna append to me that I will change that register
+;
 ; Why linkage? what is it greatly useful at?
 (define (compile exp target linkage)
     (cond ((self-evaluating? exp)
@@ -89,6 +95,7 @@ get-value-code
 (reg val)
 (reg env))
 (assign ,target (const ok))))))))
+
 (define (compile-definition exp target linkage)
 (let ((var (definition-variable exp))
 (get-value-code
@@ -364,3 +371,111 @@ target))))
 ; according to it we start implementing in special way in another function
 ; due to the overhead that happens, sometime you just forget and just keep asking yourself what if what if what if, and eventually you realize 
 ; we enforced that behaviour and the case you're trying to think about isn't gonna happen.
+
+
+(define (registers-needed s)
+(if (symbol? s) '() (car s)))
+(define (registers-modified s)
+(if (symbol? s) '() (cadr s)))
+(define (statements s)
+(if (symbol? s) (list s) (caddr s)))
+
+
+(define (needs-register? seq reg)
+(memq reg (registers-needed seq)))
+(define (modifies-register? seq reg)
+(memq reg (registers-modified seq)))
+
+
+; I got no idea what would it make a union of the needed register by seq1 and (list difference of needed registers by seq2 and modified register by seq2)
+; it wants to remove the registers modified by seq1 and needed by seq2 but not in needed by seq1
+; I think it concludes that these removed registers are not needed by seq2 as seq1 already modifies it and don't need to intialize it.
+
+; Update : It just removes the needed registers by seq2 that seq1 modifies as it should be removed cuz if they preserved seq1 would take the job of needing that register.
+; otherwise it means that this need is false and should be removed.
+(define (append-instruction-sequences . seqs)
+(define (append-2-sequences seq1 seq2)
+(make-instruction-sequence
+(list-union
+(registers-needed seq1)
+(list-difference (registers-needed seq2)
+(registers-modified seq1)))
+(list-union (registers-modified seq1)
+(registers-modified seq2))
+(append (statements seq1) (statements seq2))))
+(define (append-seq-list seqs)
+(if (null? seqs)
+(empty-instruction-sequence)
+(append-2-sequences
+(car seqs)
+(append-seq-list (cdr seqs)))))
+(append-seq-list seqs))
+
+
+(define (list-union s1 s2)
+(cond ((null? s1) s2)((memq (car s1) s2) (list-union (cdr s1) s2))
+(else (cons (car s1) (list-union (cdr s1) s2)))))
+
+(define (list-difference s1 s2)
+(cond ((null? s1) '())
+((memq (car s1) s2) (list-difference (cdr s1) s2))
+(else (cons (car s1)
+(list-difference (cdr s1) s2)))))
+
+; What I get about this thing is tangled some how
+; preserving was meant for making sure to save and restore bunch of registers around some sequence
+; but appreantly, It works only if seq2 needs it and seq1 modifies it
+; why not to just go for it, It won't be that benefical to have all this needed modified paramters that
+; we're carefully trying to set.
+; so it checks if it's necessary or not by checking modified by seq1 and needed by seq2.
+; if it's correct that means okay go for it and sandwich it with save and restore
+; but here comes a weird part, why does it add it to the needed. may be because the implementation of append-sequence
+
+; I think it removes this register that has just been preserved as there's no need for that
+; as it would now make the resulting instruction sequence having the `modified` paramter with that preserved register removed
+; which makes this new combined instruction sequence not good for preserving that register again as it already has been preserved there's not need.
+
+
+(define (preserving regs seq1 seq2)
+(if (null? regs)
+(append-instruction-sequences seq1 seq2)
+(let ((first-reg (car regs)))
+(if (and (needs-register? seq2 first-reg)
+(modifies-register? seq1 first-reg))
+(preserving (cdr regs)
+(make-instruction-sequence
+(list-union (list first-reg)
+(registers-needed seq1))
+(list-difference (registers-modified seq1)
+(list first-reg))
+(append `((save ,first-reg))
+(statements seq1)
+`((restore ,first-reg))))
+seq2)
+(preserving (cdr regs) seq1 seq2)))))
+
+; We're basically creating independant set of instructinos to be the function
+; so no need for caring about the body if it has needed register and modified register
+; it's a block you get into and come out of. 
+
+(define (tack-on-instruction-sequence seq body-seq)
+(make-instruction-sequence
+(registers-needed seq)
+(registers-modified seq)
+(append (statements seq)
+(statements body-seq))))
+
+; I think this explaination isn't correct 100%
+; These instructions won't be excuted sequentially, which means if the seq1 modifies some register that
+; is needed be seq2, we won't remove it from the overall need of the resulting instruction sequence
+; because basically seq1 won't save and restore that register
+
+
+(define (parallel-instruction-sequences seq1 seq2)
+(make-instruction-sequence
+(list-union (registers-needed seq1)
+(registers-needed seq2))
+(list-union (registers-modified seq1)
+(registers-modified seq2))
+(append (statements seq1)
+(statements seq2))))
