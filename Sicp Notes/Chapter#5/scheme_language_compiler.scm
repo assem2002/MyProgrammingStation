@@ -98,7 +98,7 @@ get-value-code
 
 (define (compile-definition exp target linkage)
 (let ((var (definition-variable exp))
-(get-value-code
+    (get-value-code
 (compile (definition-value exp) 'val 'next)))
 (end-with-linkage linkage
 (preserving '(env)
@@ -108,7 +108,7 @@ get-value-code
 (const ,var)
 (reg val)
 (reg env))
-(assign ,target (const ok))))))))
+(assign ,target (const ok)))))))) ; This is critical as we shouldn't add anything to the passed `target` register.
 
 
 ; function to produce 
