@@ -220,7 +220,7 @@ after-lambda))))
 ; secondly, while compiling the opearnds the actuall call sequence would need the `proc` and the `continue` so we preserve them while
 ; trying to compile the operands.
 
-;Notice the structure if the procedure was a lambda for instance
+;Notice the structure if the procedure was a lambda for instance (actually normal definition == lambda declartioin)
 ; - assign to target (`proc`) the lambda object
 ; - continue to after-lambda
 ; - entry point to the actual lambda sequence
@@ -229,7 +229,7 @@ after-lambda))))
 ; - using the `proc` to fetch the entrypoint and enviornment to start compiling the sequence
 
 (define (compile-application exp target linkage)
-(let ((proc-code (compile (operator exp) 'proc 'next))
+    (let ((proc-code (compile (operator exp) 'proc 'next))
 (operand-codes
 (map (lambda
 (operand) (compile operand 'val 'next))
