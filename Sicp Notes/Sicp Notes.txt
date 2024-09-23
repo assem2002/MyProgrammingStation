@@ -9,7 +9,7 @@ Notions About The Book
 '''''
 
 Data is not just a punch of constructors and selectors that shapes a capusle which holds the data,
-It's more of a contract- a set of conditions that these constructors and selectors must fulfill so that compound-data object you build validates these conditions.
+It's more of a contract - a set of conditions that these constructors and selectors must fulfill so that compound-data object you build validates these conditions.
 So, you can think of any (literally any) kind of data you want to form as a set of procedures.
 
 even pairs which is thought of as a primitve data type in scheme-Lisp,could be descirbed in a set of three procedures (cons,car,cdr)-that maniuplate the lambda expression, Do you see how we made a data object of thin air (normal procedures)?
